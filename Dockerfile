@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # 환경변수 설정: 파이썬 출력 버퍼링 끄기, .pyc 파일 생성 안하기
 ENV PYTHONDONTWRITEBYTECODE 1
