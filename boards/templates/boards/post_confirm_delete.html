@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}삭제 확인{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-20 mb-10">
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
+        <svg class="mx-auto h-16 w-16 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">정말 삭제하시겠습니까?</h2>
+        <p class="text-gray-500 mb-8">
+            <span class="font-bold text-gray-700">"{{ object.title }}"</span>
+            {% if is_memo %}메모{% else %}게시글{% endif %}을 삭제합니다.<br>이 작업은 되돌릴 수 없습니다.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex gap-3 justify-center">
+                <a href="{% if is_memo %}{% url 'boards:memo_list' %}{% else %}{% url 'boards:post_list' %}{% endif %}" 
+                   class="w-1/2 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 px-4 rounded-xl transition text-sm">
+                    취소
+                </a>
+                <button type="submit" 
+                        class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition transform active:scale-95 text-sm">
+                    네, 삭제합니다
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

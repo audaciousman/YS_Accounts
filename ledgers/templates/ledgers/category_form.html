@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}카테고리 수정{% else %}카테고리 추가{% endif %}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-4 md:mt-10">
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-xl border border-gray-100 p-5 md:p-8">
+        <!-- 헤더 -->
+        <div class="flex items-center gap-3 mb-6">
+            <a href="{% url 'ledgers:settings' %}" class="text-gray-400 hover:text-gray-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </a>
+            <h2 class="text-2xl font-bold text-gray-800 tracking-tight">
+                {% if form.instance.pk %}✏️ 카테고리 수정{% else %}🏷️ 새 카테고리 만들기{% endif %}
+            </h2>
+        </div>
+
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            <!-- 카테고리명 -->
+            <div>
+                <label class="block font-bold text-gray-700 mb-2 text-sm">항목 이름 <span class="text-red-400">*</span></label>
+                {{ form.name }}
+                <p class="text-[11px] text-gray-400 mt-1.5">예: 식비, 월급, 넷플릭스, 보험료</p>
+            </div>
+
+            <!-- 수입/지출/저금 구분 -->
+            <div class="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                <label class="block font-bold text-gray-700 mb-2 text-sm">항목 구분 <span class="text-red-400">*</span></label>
+                {{ form.type }}
+            </div>
+
+            <!-- ===== 지출 전용 영역 ===== -->
+            <div id="expense-options" class="bg-indigo-50/50 border border-indigo-100 p-5 rounded-2xl space-y-4">
+                <!-- 고정비 여부 -->
+                <div class="flex items-start gap-3">
+                    {{ form.is_fixed }}
+                    <div>
+                        <label for="{{ form.is_fixed.id_for_label }}" class="font-bold text-gray-800 cursor-pointer">이것은 [매월 고정] 인가요?</label>
+                        <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">매월 달마다 고정적으로 돈이 나가는(적금, 보험료, 월세 등) 항목이면 체크하세요.</p>
+                    </div>
+                </div>
+
+                <!-- 고정비 세부 설정 -->
+                <div id="fixed-detail-section" class="hidden border-t border-indigo-100 pt-4 space-y-4">
+                    <!-- 고정 지출일 -->
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-1.5 text-sm">📅 고정 지출일 <span class="text-xs text-gray-400 font-normal">(매월 몇 일?)</span></label>
+                        {{ form.payment_day }}
+                        <p class="text-[11px] text-gray-400 mt-1">예: 25 → 매월 25일 자동 출금</p>
+                    </div>
+                    <!-- 고정 금액 -->
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-1.5 text-sm">💸 월 고정 지출 금액 <span class="text-xs text-gray-400 font-normal">(원)</span></label>
+                        {{ form.fixed_amount }}
+                        <div class="flex justify-between items-start mt-1">
+                            <p class="text-[11px] text-gray-400">예: 35000 → 매월 35,000원 예정</p>
+                            <p id="fixed-amount-helper" class="text-xs font-black text-indigo-600 transition-opacity opacity-0"></p>
+                        </div>
+                    </div>
+                    <!-- 유효 기간 -->
+                    <div class="bg-white border border-indigo-100 rounded-xl p-4 space-y-3">
+                        <p class="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            고정비 적용 기간
+                        </p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">시작일자</label>
+                                {{ form.start_date }}
+                                <p class="text-[10px] text-gray-400 mt-1">비워두면 항상 표시</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">종료일자</label>
+                                {{ form.end_date }}
+                                <p class="text-[10px] text-gray-400 mt-1">비워두면 무기한</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 수입 전용 영역 ===== -->
+            <div id="income-options" class="hidden bg-blue-50/50 border border-blue-100 p-5 rounded-2xl">
+                <label class="block font-bold text-blue-800 mb-1.5 text-sm">💰 급여(수입) 수령일 <span class="text-xs text-blue-400 font-normal">(매월 몇 일?)</span></label>
+                {{ form.payment_day }}
+                <p class="text-[11px] text-blue-400 mt-1">설정 시 대시보드 기본 조회 기간이 <b>전월 급여일 ~ 오늘</b>로 자동 계산됩니다.</p>
+            </div>
+
+            <!-- 버튼 -->
+            <div class="flex gap-3 pt-4 border-t border-gray-100">
+                <a href="{% url 'ledgers:settings' %}" class="w-1/3 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 md:py-3.5 rounded-xl transition text-sm">취소</a>
+                <button type="submit" class="w-2/3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3 md:py-3.5 rounded-xl shadow-lg shadow-indigo-200 transition active:scale-95 text-sm">
+                    {% if form.instance.pk %}변경사항 저장{% else %}저장하기{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    input[type="text"], input[type="number"], input[type="date"], select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+        background-color: #fff;
+        font-weight: 500;
+        color: #1f2937;
+        font-size: 0.875rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus {
+        border-color: #6366f1;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    input[type="checkbox"] {
+        width: 1.4rem; height: 1.4rem;
+        accent-color: #4f46e5;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect = document.getElementById('{{ form.type.id_for_label }}');
+    const expenseOptions = document.getElementById('expense-options');
+    const incomeOptions = document.getElementById('income-options');
+    const isFixedCheckbox = document.getElementById('{{ form.is_fixed.id_for_label }}');
+    const fixedDetailSection = document.getElementById('fixed-detail-section');
+    const fixedAmountInput = document.getElementById('{{ form.fixed_amount.id_for_label }}');
+
+    function renderAll() {
+        const selectedType = typeSelect.value;
+        const isExpenseOrSavings = selectedType === 'expense' || selectedType === 'savings';
+        const isIncome = selectedType === 'income';
+        
+        expenseOptions.style.display = isExpenseOrSavings ? 'block' : 'none';
+        incomeOptions.style.display  = isIncome ? 'block' : 'none';
+        
+        if (!isExpenseOrSavings) {
+            isFixedCheckbox.checked = false;
+            fixedDetailSection.classList.add('hidden');
+        }
+        renderFixedDetail();
+    }
+
+    function renderFixedDetail() {
+        if (isFixedCheckbox.checked) {
+            fixedDetailSection.classList.remove('hidden');
+        } else {
+            fixedDetailSection.classList.add('hidden');
+            if (fixedAmountInput) fixedAmountInput.value = '';
+            formatFixedAmount();
+        }
+    }
+
+    function formatFixedAmount() {
+        const amountHelper = document.getElementById('fixed-amount-helper');
+        if (fixedAmountInput && fixedAmountInput.value) {
+            amountHelper.textContent = Number(fixedAmountInput.value).toLocaleString() + '원';
+            amountHelper.classList.remove('opacity-0');
+        } else {
+            amountHelper.textContent = '';
+            amountHelper.classList.add('opacity-0');
+        }
+    }
+
+    typeSelect.addEventListener('change', renderAll);
+    isFixedCheckbox.addEventListener('change', renderFixedDetail);
+    if (fixedAmountInput) {
+        fixedAmountInput.addEventListener('input', formatFixedAmount);
+    }
+    renderAll();
+    formatFixedAmount();
+});
+</script>
+{% endblock %}

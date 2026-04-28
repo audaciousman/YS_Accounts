@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}가계부 환경설정{% endblock %}
+{% load humanize %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-4 md:space-y-8 mt-2 md:mt-4 mb-20">
+
+    <!-- 페이지 헤더 -->
+    <div>
+        <h1 class="text-xl md:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center">
+            <span class="mr-2 md:mr-3">⚙️</span> 가계부 기본 설정
+        </h1>
+        <p class="text-gray-500 mt-1 text-sm md:text-base font-medium">카테고리와 나의 자산(통장)을 관리하세요.</p>
+    </div>
+
+    <!-- 설정 영역 그리드 -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">
+
+        <!-- ===== 왼쪽: 분류(Category) 관리 (3/5 비율) ===== -->
+        <div class="lg:col-span-3 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+
+            <!-- 카드 헤더 -->
+            <div class="bg-gray-50 px-4 md:px-6 py-3 md:py-4 border-b border-gray-100 flex justify-between items-center gap-2">
+                <h3 class="text-base md:text-xl font-bold text-gray-800 flex items-center min-w-0">
+                    <span class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-2 md:mr-3 text-xs md:text-sm font-black flex-shrink-0">1</span>
+                    <span class="truncate">분류 설정</span>
+                </h3>
+                <a href="{% url 'ledgers:category_create' %}" class="flex-shrink-0 text-xs md:text-sm font-bold bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white py-2 px-3 md:px-4 rounded-xl transition shadow-sm flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <span class="hidden sm:inline">카테고리</span> 추가
+                </a>
+            </div>
+
+            <!-- 검색 + 탭 필터 -->
+            <div class="px-4 md:px-6 pt-3 md:pt-4 pb-3 border-b border-gray-100 space-y-3">
+                <!-- 검색 폼 -->
+                <form method="get" id="search-form" class="flex items-center gap-2">
+                    <!-- 현재 탭 값 유지 -->
+                    {% if active_tab != 'all' %}
+                    <input type="hidden" name="tab" value="{{ active_tab }}">
+                    {% endif %}
+                    <div class="relative flex-1">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                        <input type="text" name="search" id="search-input"
+                            value="{{ search_query }}"
+                            placeholder="카테고리명 검색..."
+                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition">
+                    </div>
+                    <button type="submit" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 py-2.5 rounded-xl text-sm transition">검색</button>
+                    {% if search_query %}
+                    <a href="?tab={{ active_tab }}" class="text-xs text-gray-400 hover:text-red-400 font-medium transition px-2">✕ 초기화</a>
+                    {% endif %}
+                </form>
+
+                <!-- 탭 필터 (모바일: 가로 스크롤) -->
+                <nav class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide" id="tab-nav" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
+                    {% with tab_list=active_tab %}
+                    <a href="?tab=all{% if search_query %}&search={{ search_query }}{% endif %}"
+                        class="tab-btn px-3.5 py-1.5 text-xs font-bold rounded-lg transition
+                        {% if active_tab == 'all' %}bg-indigo-600 text-white shadow-sm{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+                        전체 <span class="ml-0.5 opacity-70">({{ count_all }})</span>
+                    </a>
+                    <a href="?tab=income{% if search_query %}&search={{ search_query }}{% endif %}"
+                        class="tab-btn px-3.5 py-1.5 text-xs font-bold rounded-lg transition
+                        {% if active_tab == 'income' %}bg-blue-600 text-white shadow-sm{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+                        💙 수입 <span class="ml-0.5 opacity-70">({{ count_income }})</span>
+                    </a>
+                    <a href="?tab=savings{% if search_query %}&search={{ search_query }}{% endif %}"
+                        class="tab-btn px-3.5 py-1.5 text-xs font-bold rounded-lg transition
+                        {% if active_tab == 'savings' %}bg-emerald-600 text-white shadow-sm{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+                        🍀 저금 <span class="ml-0.5 opacity-70">({{ count_savings }})</span>
+                    </a>
+                    <a href="?tab=expense{% if search_query %}&search={{ search_query }}{% endif %}"
+                        class="tab-btn px-3.5 py-1.5 text-xs font-bold rounded-lg transition
+                        {% if active_tab == 'expense' %}bg-red-500 text-white shadow-sm{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+                        ❤️ 지출 전체 <span class="ml-0.5 opacity-70">({{ count_expense }})</span>
+                    </a>
+                    <a href="?tab=fixed{% if search_query %}&search={{ search_query }}{% endif %}"
+                        class="tab-btn px-3.5 py-1.5 text-xs font-bold rounded-lg transition
+                        {% if active_tab == 'fixed' %}bg-purple-600 text-white shadow-sm{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+                        🔒 고정비 <span class="ml-0.5 opacity-70">({{ count_fixed }})</span>
+                    </a>
+                    <a href="?tab=variable{% if search_query %}&search={{ search_query }}{% endif %}"
+                        class="tab-btn px-3.5 py-1.5 text-xs font-bold rounded-lg transition
+                        {% if active_tab == 'variable' %}bg-yellow-500 text-white shadow-sm{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+                        🌊 변동비 <span class="ml-0.5 opacity-70">({{ count_variable }})</span>
+                    </a>
+                    {% endwith %}
+                </nav>
+            </div>
+
+            <!-- 카테고리 목록 -->
+            <ul class="divide-y divide-gray-100 flex-1 overflow-y-auto" style="max-height: 520px;">
+                {% for cat in categories %}
+                <li class="px-5 py-4 hover:bg-gray-50 transition group">
+                    <div class="flex items-start justify-between gap-2">
+                        <!-- 좌측: 정보 -->
+                        <div class="min-w-0 flex-1 space-y-1.5">
+                            <!-- 유형 배지 + 이름 -->
+                            <div class="flex items-center flex-wrap gap-2">
+                                {% if cat.type == 'income' %}
+                                <span class="text-[10px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded">수입</span>
+                                {% elif cat.type == 'savings' %}
+                                <span class="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">저금</span>
+                                {% else %}
+                                <span class="text-[10px] font-black text-red-700 bg-red-100 px-2 py-0.5 rounded">지출</span>
+                                {% endif %}
+                                <span class="font-bold text-gray-800 text-base truncate">{{ cat.name }}</span>
+                            </div>
+                            <!-- 속성 배지들 -->
+                            <div class="flex flex-wrap gap-1.5 items-center">
+                                {% if cat.type == 'expense' %}
+                                    {% if cat.is_fixed %}
+                                    <span class="text-[10px] font-bold text-red-500 border border-red-200 px-2 py-0.5 rounded-full bg-red-50">🔒 고정비</span>
+                                    {% else %}
+                                    <span class="text-[10px] font-bold text-yellow-600 border border-yellow-200 px-2 py-0.5 rounded-full bg-yellow-50">🌊 변동비</span>
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if cat.payment_day %}
+                                    {% if cat.type == 'income' %}
+                                    <span class="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                                        💰 매월 {{ cat.payment_day }}일 급여
+                                    </span>
+                                    {% elif cat.is_fixed %}
+                                    <span class="text-[10px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                                        📅 매월 {{ cat.payment_day }}일 지출
+                                    </span>
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if cat.fixed_amount %}
+                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                    💸 월 {{ cat.fixed_amount|intcomma }}원
+                                </span>
+                                {% endif %}
+
+                                {% if cat.start_date or cat.end_date %}
+                                <span class="text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                                    🗓 {{ cat.start_date|date:"Y.m.d"|default:"시작일 미정" }} ~ {{ cat.end_date|date:"Y.m.d"|default:"무기한" }}
+                                </span>
+                                {% endif %}
+
+                            </div>
+                        </div>
+
+                        <!-- 우측: 수정/삭제 버튼 -->
+                        <div class="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <a href="{% url 'ledgers:category_update' cat.id %}"
+                                class="text-gray-400 hover:text-indigo-600 transition p-2 bg-white rounded-full hover:bg-indigo-50 border border-transparent hover:border-indigo-200"
+                                title="수정">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </a>
+                            <form method="post" action="{% url 'ledgers:category_delete' cat.id %}"
+                                onsubmit="return confirm('{{ cat.name }} 카테고리를 삭제하시겠습니까?\n과거 내역에서 해당 분류는 [미지정] 처리됩니다.');">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="text-gray-400 hover:text-red-500 transition p-2 bg-white rounded-full hover:bg-red-50 border border-transparent hover:border-red-200"
+                                    title="삭제">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="px-6 py-14 text-center text-gray-400">
+                    <svg class="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    {% if search_query %}
+                    <p class="font-bold text-gray-600">"{{ search_query }}"에 해당하는 카테고리가 없습니다.</p>
+                    <a href="?tab={{ active_tab }}" class="text-xs text-indigo-500 mt-1 inline-block hover:underline">검색 초기화</a>
+                    {% else %}
+                    <p class="font-bold text-gray-600">현재 탭에 카테고리가 없습니다.</p>
+                    <a href="{% url 'ledgers:category_create' %}" class="text-xs text-indigo-500 mt-1 inline-block hover:underline">+ 카테고리 추가하기</a>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- ===== 오른쪽: 자산 관리 (2/5 비율) ===== -->
+        <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden h-fit">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                    <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 text-sm font-black">2</span>
+                    나의 자산 추적
+                </h3>
+                <a href="{% url 'ledgers:asset_create' %}" class="text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl transition shadow-sm flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    통장 추가
+                </a>
+            </div>
+
+            <ul class="divide-y divide-gray-100">
+                {% for asset in assets %}
+                <li class="px-6 py-4 hover:bg-gray-50 transition group">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">
+                                    {% if asset.asset_type == 'cash' %}💵{% elif asset.asset_type == 'bank' %}🏦{% elif asset.asset_type == 'savings' %}🍀{% else %}💳{% endif %}
+                                </span>
+                                <span class="font-bold text-gray-800">{{ asset.name }}</span>
+                            </div>
+                            <div class="mt-1">
+                                <span class="text-xs text-gray-400 font-bold bg-gray-100 px-1.5 py-0.5 rounded mr-1">{{ asset.get_asset_type_display }}</span>
+                                <span class="text-xs font-black text-indigo-500">{{ asset.initial_balance|intcomma }}원 (초기)</span>
+                            </div>
+                        </div>
+                        <form method="post" action="{% url 'ledgers:asset_delete' asset.id %}" onsubmit="return confirm('{{ asset.name }}를 삭제하시겠습니까?\n과거 내역에서 해당 자산은 지워집니다!');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-gray-300 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="px-6 py-10 text-center text-gray-400 font-medium">
+                    <p>등록된 자산이 없습니다.</p>
+                    <a href="{% url 'ledgers:asset_create' %}" class="text-xs text-blue-500 mt-1 inline-block hover:underline">+ 새 통장 / 자산 추가</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

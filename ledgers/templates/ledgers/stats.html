@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}가계부 통계 및 리포트{% endblock %}
+{% load humanize %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-4 md:space-y-6 mt-2 md:mt-4 mb-20">
+
+    <!-- 페이지 헤더 & 날짜 필터 -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-xl md:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center">
+                <span class="mr-2 md:mr-3">📊</span> 통계 및 리포트
+            </h1>
+            <p class="text-gray-500 mt-1 text-sm md:text-base font-medium">나의 일자별 수입, 지출, 저축 흐름을 분석해보세요.</p>
+        </div>
+
+        <form method="get" class="flex flex-col md:flex-row gap-2">
+            <div class="flex gap-2 items-center">
+                <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-400 outline-none transition text-gray-600 font-bold">
+                <span class="text-gray-400 font-bold">~</span>
+                <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-400 outline-none transition text-gray-600 font-bold">
+            </div>
+            <div class="flex gap-2">
+                <select name="group_by" class="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-400 outline-none transition text-gray-600 font-bold cursor-pointer">
+                    <option value="day" {% if group_by == 'day' %}selected{% endif %}>일별 조회</option>
+                    <option value="month" {% if group_by == 'month' %}selected{% endif %}>월별 조회</option>
+                    <option value="year" {% if group_by == 'year' %}selected{% endif %}>년별 조회</option>
+                </select>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm whitespace-nowrap">
+                    조회
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 4개의 요약 카드 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+        <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="flex items-center text-gray-500 mb-1 md:mb-2">
+                <span class="text-blue-500 mr-2 font-black">↓</span>
+                <h3 class="font-bold text-xs md:text-sm">총 수입</h3>
+            </div>
+            <p class="text-lg md:text-2xl font-black text-blue-600">{{ total_income|intcomma }}<span class="text-xs md:text-lg ml-0.5 text-gray-400">원</span></p>
+        </div>
+        <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="flex items-center text-gray-500 mb-1 md:mb-2">
+                <span class="text-red-500 mr-2 font-black">↑</span>
+                <h3 class="font-bold text-xs md:text-sm">총 지출</h3>
+            </div>
+            <p class="text-lg md:text-2xl font-black text-red-500">{{ total_expense|intcomma }}<span class="text-xs md:text-lg ml-0.5 text-gray-400">원</span></p>
+        </div>
+        <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="flex items-center text-gray-500 mb-1 md:mb-2">
+                <span class="text-emerald-500 mr-2 font-black">★</span>
+                <h3 class="font-bold text-xs md:text-sm">총 저축</h3>
+            </div>
+            <p class="text-lg md:text-2xl font-black text-emerald-600">{{ total_savings|intcomma }}<span class="text-xs md:text-lg ml-0.5 text-gray-400">원</span></p>
+        </div>
+        <div class="bg-indigo-50 p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-indigo-100 flex flex-col">
+            <div class="flex items-center text-indigo-500 mb-1 md:mb-2">
+                <span class="mr-2 font-black">=</span>
+                <h3 class="font-bold text-xs md:text-sm">기간 내 남은 잉여금</h3>
+            </div>
+            <p class="text-lg md:text-2xl font-black text-indigo-700">{{ balance|intcomma }}<span class="text-xs md:text-lg ml-0.5 text-indigo-300">원</span></p>
+        </div>
+    </div>
+
+    <!-- 그래프 패널 -->
+    <div class="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-gray-100">
+        <h3 class="font-extrabold text-gray-800 mb-4">일자별 흐름 그래프</h3>
+        <div class="relative w-full" style="height: 400px;">
+            <canvas id="ledgerChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 데이터 표 패널 -->
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-gray-50 px-4 py-3 md:px-6 md:py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-extrabold text-gray-800 text-sm md:text-base">일자별 요약 테이블</h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-white">
+                    <tr>
+                        <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100">날짜</th>
+                        <th class="p-3 md:p-4 font-bold text-blue-500 text-xs uppercase tracking-wider text-right border-b border-gray-100">수입 (원)</th>
+                        <th class="p-3 md:p-4 font-bold text-red-500 text-xs uppercase tracking-wider text-right border-b border-gray-100">지출 (원)</th>
+                        <th class="p-3 md:p-4 font-bold text-emerald-500 text-xs uppercase tracking-wider text-right border-b border-gray-100">저축 (원)</th>
+                        <th class="p-3 md:p-4 font-bold text-indigo-500 text-xs uppercase tracking-wider text-right border-b border-gray-100">여유자금 (원)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for row in table_data %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-3 md:p-4 text-gray-600 font-bold text-sm">{{ row.date_label }}</td>
+                        <td class="p-3 md:p-4 text-right font-medium text-blue-600">{{ row.income|intcomma }}</td>
+                        <td class="p-3 md:p-4 text-right font-medium text-red-500">{{ row.expense|intcomma }}</td>
+                        <td class="p-3 md:p-4 text-right font-medium text-emerald-600">{{ row.savings|intcomma }}</td>
+                        <td class="p-3 md:p-4 text-right font-black text-indigo-600">{{ row.balance|intcomma }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-gray-400 font-medium">선택하신 기간 내역이 없습니다.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js 연동 스크립트 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('ledgerChart').getContext('2d');
+    
+    // 장고에서 넘겨준 JSON 데이터 파싱
+    const labels = JSON.parse('{{ chart_labels_json|escapejs }}');
+    const incomeData = JSON.parse('{{ chart_income_json|escapejs }}');
+    const expenseData = JSON.parse('{{ chart_expense_json|escapejs }}');
+    const savingsData = JSON.parse('{{ chart_savings_json|escapejs }}');
+
+    // Chart.js 인스턴스 생성
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: '수입 (+)',
+                    data: incomeData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)', // Tailwind blue-500
+                    borderRadius: 4,
+                },
+                {
+                    label: '지출 (-)',
+                    data: expenseData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)', // Tailwind red-500
+                    borderRadius: 4,
+                },
+                {
+                    type: 'line',
+                    label: '순 저축 증가액',
+                    data: savingsData,
+                    borderColor: 'rgba(16, 185, 129, 1)', // Tailwind emerald-500
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('ko-KR').format(context.parsed.y) + '원';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value, index, values) {
+                            if(value >= 10000) {
+                                return value / 10000 + '만';
+                            }
+                            return value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

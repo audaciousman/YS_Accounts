@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block title %}가계부 대시보드{% endblock %}
+{% load humanize %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-4 md:space-y-6">
+
+    <!-- ▶ 헤더 -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+            <h1 class="text-2xl md:text-4xl font-extrabold text-gray-800 tracking-tight">가계부 내역</h1>
+            <p class="text-gray-500 mt-0.5 text-sm md:text-base font-medium">
+                <span class="text-indigo-600 font-bold">{{ date_from|date:"Y.m.d" }}</span>
+                <span class="mx-1 text-gray-400">~</span>
+                <span class="text-indigo-600 font-bold">{{ date_to|date:"Y.m.d" }}</span>
+            </p>
+        </div>
+        <a href="{% url 'ledgers:transaction_create' %}"
+            class="w-full sm:w-auto flex items-center justify-center gap-2
+                   bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
+                   text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            내역 추가
+        </a>
+    </div>
+
+    <!-- ▶ 날짜 필터 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-4 md:px-6">
+        <form method="get" class="space-y-3">
+            <!-- 날짜 입력 행 -->
+            <div class="flex items-end gap-2">
+                <div class="flex-1 min-w-0">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">시작일</label>
+                    <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}"
+                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 font-semibold text-gray-700 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                </div>
+                <span class="text-gray-400 font-bold text-lg pb-2 flex-shrink-0">~</span>
+                <div class="flex-1 min-w-0">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">종료일</label>
+                    <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}"
+                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 font-semibold text-gray-700 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                </div>
+            </div>
+            <!-- 버튼 행 -->
+            <div class="flex gap-2 flex-wrap">
+                <button type="submit" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold px-5 py-2.5 rounded-xl transition text-sm shadow-md">
+                    🔍 조회
+                </button>
+                {% if salary_day %}
+                <a href="?date_from={{ salary_date_from|date:'Y-m-d' }}&date_to={{ salary_date_to|date:'Y-m-d' }}"
+                    class="flex-1 sm:flex-none flex items-center justify-center gap-1.5
+                           bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600
+                           text-white font-bold px-4 py-2.5 rounded-xl transition text-sm shadow-md whitespace-nowrap">
+                    💰 급여일 기준 ({{ salary_day }}일)
+                </a>
+                {% else %}
+                <div class="flex-1 text-xs text-gray-400 bg-gray-50 border border-dashed border-gray-200 px-3 py-2.5 rounded-xl leading-tight">
+                    💡 <a href="{% url 'ledgers:category_create' %}" class="text-indigo-500 font-bold hover:underline">급여일 설정</a> 시 자동 기간 적용
+                </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- ▶ 요약 카드 4개 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+        <!-- 총 수입 -->
+        <div class="bg-white p-4 md:p-7 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="flex items-center text-blue-500 mb-1 md:mb-2">
+                <svg class="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
+                </svg>
+                <h3 class="font-bold text-xs md:text-base truncate">총 수입</h3>
+            </div>
+            <p class="text-base md:text-3xl font-black text-blue-600 leading-tight">
+                {{ total_income|intcomma }}<span class="text-xs md:text-xl font-bold ml-0.5">원</span>
+            </p>
+        </div>
+        <!-- 총 지출 -->
+        <div class="bg-white p-4 md:p-7 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="flex items-center text-red-500 mb-1 md:mb-2">
+                <svg class="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
+                </svg>
+                <h3 class="font-bold text-xs md:text-base truncate">총 지출</h3>
+            </div>
+            <p class="text-base md:text-3xl font-black text-red-600 leading-tight">
+                {{ total_expense|intcomma }}<span class="text-xs md:text-xl font-bold ml-0.5">원</span>
+            </p>
+            {% if fixed_total_expected %}
+            <p class="text-[10px] md:text-xs text-gray-400 mt-1 leading-tight">예정 {{ fixed_total_expected|intcomma }}원</p>
+            {% endif %}
+        </div>
+        <!-- 총 저금 -->
+        <div class="bg-white p-4 md:p-7 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="flex items-center text-emerald-500 mb-1 md:mb-2">
+                <svg class="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                <h3 class="font-bold text-xs md:text-base truncate">총 저축</h3>
+            </div>
+            <p class="text-base md:text-3xl font-black text-emerald-600 leading-tight">
+                {{ total_savings|intcomma }}<span class="text-xs md:text-xl font-bold ml-0.5">원</span>
+            </p>
+        </div>
+        <!-- 잔액 -->
+        <div class="bg-white p-4 md:p-7 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="flex items-center text-gray-500 mb-1 md:mb-2">
+                <svg class="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h3 class="font-bold text-xs md:text-base truncate">잔액</h3>
+            </div>
+            <p class="text-base md:text-3xl font-black leading-tight {% if balance >= 0 %}text-gray-800{% else %}text-red-600{% endif %}">
+                {{ balance|intcomma }}<span class="text-xs md:text-xl font-bold ml-0.5">원</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- ▶ 고정비 현황 패널 -->
+    {% if fixed_status_list %}
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <!-- 헤더 -->
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 px-4 py-3 md:px-6 md:py-4 border-b border-gray-100">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <span>🔒</span>
+                    <h3 class="font-extrabold text-gray-800 text-sm md:text-base">이번 기간 고정비 현황</h3>
+                    <span class="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">{{ fixed_status_list|length }}건</span>
+                </div>
+                <div class="flex gap-2 text-xs font-bold">
+                    <span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200">✅ {{ fixed_entered_count }}건 완료</span>
+                    <span class="text-orange-600 bg-orange-50 px-2 py-1 rounded-full border border-orange-200">⚠️ {{ fixed_pending_count }}건 미입력</span>
+                </div>
+            </div>
+        </div>
+        <!-- 카드 그리드 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 md:p-5">
+            {% for cat in fixed_status_list %}
+            <div class="flex items-start gap-3 p-3 md:p-4 rounded-xl border
+                {% if cat.is_entered %}border-emerald-200 bg-emerald-50/50{% else %}border-orange-200 bg-orange-50/50{% endif %}">
+                <div class="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-sm
+                    {% if cat.is_entered %}bg-emerald-100{% else %}bg-orange-100{% endif %}">
+                    {% if cat.is_entered %}✅{% else %}⚠️{% endif %}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="font-bold text-gray-800 text-sm truncate">{{ cat.name }}</p>
+                    {% if cat.fixed_amount %}
+                    <p class="text-xs font-bold mt-0.5 {% if cat.is_entered %}text-emerald-600{% else %}text-orange-500{% endif %}">
+                        {{ cat.fixed_amount|intcomma }}원/월
+                    </p>
+                    {% endif %}
+                    {% if cat.payment_day %}
+                    <p class="text-[11px] text-gray-400">매월 {{ cat.payment_day }}일</p>
+                    {% endif %}
+                    <p class="mt-1 text-[10px] font-bold
+                        {% if cat.is_entered %}text-emerald-500{% else %}text-orange-400{% endif %}">
+                        {% if cat.is_entered %}입력완료{% else %}미입력{% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ▶ 카테고리별 지출 요약 (아코디언) -->
+    {% if category_expense_summary %}
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <button onclick="toggleCatSummary()" id="cat-summary-btn"
+            class="w-full bg-gradient-to-r from-gray-50 to-white px-4 py-3 md:px-6 md:py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition">
+            <div class="flex items-center gap-2 md:gap-3 min-w-0">
+                <span class="text-base md:text-lg flex-shrink-0">📊</span>
+                <h3 class="font-extrabold text-gray-800 text-sm md:text-base truncate">카테고리별 지출</h3>
+                <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full flex-shrink-0">{{ category_expense_summary|length }}분류</span>
+            </div>
+            <svg id="cat-summary-icon" class="w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+        <div id="cat-summary-body" class="px-4 py-3 md:px-6 md:py-4 space-y-2.5 md:space-y-3">
+            {% for item in category_expense_summary %}
+            {% if item.total %}
+            <div class="flex items-center gap-2 md:gap-3">
+                <div class="w-24 md:w-32 flex-shrink-0">
+                    <p class="text-xs md:text-sm font-bold text-gray-700 truncate">
+                        {% if item.category__name %}{{ item.category__name }}{% else %}<span class="text-gray-400 italic">미지정</span>{% endif %}
+                    </p>
+                    <p class="text-[10px] md:text-[11px] text-gray-400">{{ item.cnt }}건</p>
+                </div>
+                <div class="flex-1 bg-gray-100 rounded-full h-2 md:h-2.5 min-w-0">
+                    <div class="h-full rounded-full {% if item.category__is_fixed %}bg-purple-400{% else %}bg-red-400{% endif %}"
+                        style="width: {% widthratio item.total total_expense 100 %}%"></div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p class="text-xs md:text-sm font-black text-gray-800">{{ item.total|intcomma }}원</p>
+                    {% if item.category__is_fixed %}<span class="text-[9px] md:text-[10px] text-purple-500 font-bold">고정</span>{% else %}<span class="text-[9px] md:text-[10px] text-yellow-600 font-bold">변동</span>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% if uncategorized_expense %}
+            <div class="flex items-center gap-2 md:gap-3 pt-2 border-t border-gray-100">
+                <p class="text-xs text-gray-400 w-24 md:w-32 flex-shrink-0 italic">미분류</p>
+                <div class="flex-1 bg-gray-100 rounded-full h-2 min-w-0">
+                    <div class="h-2 rounded-full bg-gray-300"
+                        style="width: {% widthratio uncategorized_expense total_expense 100 %}%"></div>
+                </div>
+                <p class="text-xs md:text-sm font-black text-gray-400">{{ uncategorized_expense|intcomma }}원</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ▶ 거래 내역 테이블 -->
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+        <table class="w-full text-left border-collapse" style="min-width: 600px;">
+            <thead>
+                <tr class="bg-gray-50 border-b border-gray-100">
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap">날짜</th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap">유형</th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap">분류</th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap hidden md:table-cell">결제수단</th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap hidden md:table-cell">작성자</th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider">내역</th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider text-right whitespace-nowrap">금액</th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider text-center w-10"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for tx in transactions %}
+                <tr class="hover:bg-indigo-50/30 active:bg-indigo-50/50 transition duration-150 group">
+                    <td class="p-3 md:p-4 text-gray-500 font-medium whitespace-nowrap text-xs md:text-sm">{{ tx.date|date:"m.d" }}<span class="hidden md:inline"> ({{ tx.date|date:"Y" }})</span></td>
+                    <td class="p-3 md:p-4 whitespace-nowrap">
+                        {% if tx.transaction_type == 'income' %}
+                        <span class="inline-block px-1.5 md:px-2.5 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-blue-700 bg-blue-100 rounded-md md:rounded-lg">수입</span>
+                        {% elif tx.transaction_type == 'savings_deposit' %}
+                        <span class="inline-block px-1.5 md:px-2.5 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-100 rounded-md md:rounded-lg">저축 넣기</span>
+                        {% elif tx.transaction_type == 'savings_withdraw' %}
+                        <span class="inline-block px-1.5 md:px-2.5 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-orange-700 bg-orange-100 rounded-md md:rounded-lg">저축 빼기</span>
+                        {% elif tx.transaction_type == 'transfer' %}
+                        <span class="inline-block px-1.5 md:px-2.5 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-gray-700 bg-gray-200 rounded-md md:rounded-lg">이체</span>
+                        {% else %}
+                        <span class="inline-block px-1.5 md:px-2.5 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-red-700 bg-red-100 rounded-md md:rounded-lg">지출</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3 md:p-4 whitespace-nowrap">
+                        {% if tx.category %}
+                        <div class="flex items-center gap-1">
+                            <span class="font-semibold text-gray-700 text-xs md:text-sm">{{ tx.category.name }}</span>
+                            {% if tx.category.type == 'expense' and tx.category.is_fixed %}
+                            <span class="hidden md:inline text-[9px] font-black text-red-500 bg-red-50 px-1 py-0.5 rounded border border-red-100">고정</span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="text-gray-400 text-xs italic">미지정</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3 md:p-4 text-gray-600 font-medium whitespace-nowrap text-xs md:text-sm hidden md:table-cell">
+                        {% if tx.transaction_type == 'income' %}
+                            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>{{ tx.deposit_asset.name|default:"-" }}</span>
+                        {% elif tx.transaction_type == 'expense' %}
+                            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{{ tx.withdraw_asset.name|default:"-" }}</span>
+                        {% elif tx.transaction_type == 'savings_deposit' or tx.transaction_type == 'savings_withdraw' or tx.transaction_type == 'transfer' %}
+                            <span class="flex items-center gap-1.5">
+                                <span class="max-w-[70px] truncate" title="{{ tx.withdraw_asset.name }}">{{ tx.withdraw_asset.name|default:"-" }}</span>
+                                <svg class="w-3 h-3 text-gray-400 mx-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                <span class="max-w-[70px] truncate" title="{{ tx.deposit_asset.name }}">{{ tx.deposit_asset.name|default:"-" }}</span>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3 md:p-4 text-gray-600 font-medium whitespace-nowrap text-xs md:text-sm hidden md:table-cell">
+                        {% if tx.user %}
+                            <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg text-[11px] font-bold">
+                                {% if tx.user.last_name or tx.user.first_name %}
+                                    {{ tx.user.last_name }}{{ tx.user.first_name }}
+                                {% else %}
+                                    {{ tx.user.email|truncatechars:10 }}
+                                {% endif %}
+                            </span>
+                        {% else %}
+                            <span class="text-gray-300">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3 md:p-4 text-gray-800 text-xs md:text-sm group-hover:text-indigo-600 transition max-w-[120px] md:max-w-none truncate">
+                        {{ tx.description }}
+                        <div class="md:hidden mt-0.5">
+                            {% if tx.user %}
+                            <span class="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                                ✍️ {% if tx.user.last_name or tx.user.first_name %}{{ tx.user.last_name }}{{ tx.user.first_name }}{% else %}{{ tx.user.email|truncatechars:10 }}{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="p-3 md:p-4 text-right font-black text-sm md:text-base whitespace-nowrap 
+                        {% if tx.transaction_type == 'income' or tx.transaction_type == 'savings_withdraw' %}
+                            text-blue-600
+                        {% elif tx.transaction_type == 'savings_deposit' %}
+                            text-emerald-600
+                        {% elif tx.transaction_type == 'transfer' %}
+                            text-gray-600
+                        {% else %}
+                            text-red-500
+                        {% endif %}">
+                        {{ tx.amount|intcomma }}원
+                    </td>
+                    <!-- 소프트 삭제 -->
+                    <td class="p-3 md:p-4 text-center">
+                        <form method="post" action="{% url 'ledgers:transaction_delete' tx.pk %}"
+                            onsubmit="return confirm('「{{ tx.description }}」을 삭제하시겠습니까?\n(데이터는 보존됩니다)');">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="text-gray-300 hover:text-red-500 active:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50 md:opacity-0 md:group-hover:opacity-100"
+                                title="삭제">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="p-12 md:p-16 text-center bg-gray-50/50">
+                        <svg class="mx-auto h-12 w-12 md:h-14 md:w-14 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p class="text-base md:text-lg font-bold text-gray-600 mb-1">해당 기간의 거래 내역이 없습니다.</p>
+                        <p class="text-xs md:text-sm text-gray-500">날짜 범위를 변경하거나 내역을 추가해보세요!</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+</div><!-- /max-w-5xl -->
+
+<script>
+function toggleCatSummary() {
+    const body = document.getElementById('cat-summary-body');
+    const icon = document.getElementById('cat-summary-icon');
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        body.style.display = 'none';
+        icon.style.transform = 'rotate(-90deg)';
+    }
+}
+</script>
+{% endblock %}

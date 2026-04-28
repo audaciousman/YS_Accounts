@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}가계부 & 커뮤니티{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+    <!-- ======================================================
+         모바일 상단 헤더 (lg 이상에서는 숨김)
+    ====================================================== -->
+    {% if request.user.is_authenticated %}
+    <header class="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div class="flex items-center justify-between px-4 h-14">
+            <!-- 로고 -->
+            <a href="{% url 'ledgers:dashboard' %}"
+               class="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                Smart Ledger
+            </a>
+            <!-- 햄버거 버튼 -->
+            <button id="menu-open-btn"
+                    aria-label="메뉴 열기"
+                    class="p-2 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ======================================================
+         모바일 오버레이 배경 (사이드바 열렸을 때)
+    ====================================================== -->
+    <div id="sidebar-backdrop"
+         class="fixed inset-0 z-40 bg-black/50 hidden lg:hidden"
+         onclick="closeSidebar()"></div>
+    {% endif %}
+
+    <!-- ======================================================
+         레이아웃 컨테이너 (사이드바 + 메인 콘텐츠)
+    ====================================================== -->
+    <div class="lg:flex lg:h-screen lg:overflow-hidden">
+
+        <!-- ======================================================
+             사이드바 (데스크탑: 고정 flex, 모바일: 슬라이드 오버레이)
+        ====================================================== -->
+        {% if request.user.is_authenticated %}
+        <aside id="sidebar"
+               class="fixed top-0 left-0 z-50 h-full w-72 bg-white shadow-xl
+                      transform -translate-x-full transition-transform duration-300 ease-in-out
+                      lg:static lg:z-auto lg:w-64 lg:translate-x-0 lg:shadow-md lg:flex-shrink-0 lg:flex lg:flex-col">
+
+            <!-- 사이드바 상단 -->
+            <div class="h-16 flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0">
+                <a href="{% url 'ledgers:dashboard' %}"
+                   class="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-80 transition">
+                    Smart Ledger
+                </a>
+                <!-- 모바일 닫기 버튼 -->
+                <button id="menu-close-btn"
+                        onclick="closeSidebar()"
+                        class="lg:hidden p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- 가계부(워크스페이스) 선택 드롭다운 -->
+            {% if available_households and available_households.count > 1 %}
+            <div class="px-4 mt-4 relative group cursor-pointer z-50">
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 flex justify-between items-center hover:bg-indigo-100 transition">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] text-indigo-500 font-bold uppercase tracking-wide">현재 가계부</span>
+                        <span class="text-sm font-bold text-indigo-900 truncate w-40">{{ active_household.name }}</span>
+                    </div>
+                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                
+                <!-- 드롭다운 메뉴 -->
+                <div class="absolute left-4 right-4 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden divide-y divide-gray-50">
+                    <div class="py-1 px-3 text-[10px] text-gray-400 font-bold bg-gray-50/80">내 가계부 목록</div>
+                    {% for h in available_households %}
+                        <form method="post" action="{% url 'ledgers:household_switch' h.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between {% if active_household.id == h.id %}bg-indigo-50 text-indigo-700 font-extrabold{% else %}text-gray-700 font-medium{% endif %} transition">
+                                <span class="truncate w-36">{{ h.name }}</span>
+                                {% if active_household.id == h.id %}
+                                <svg class="w-4 h-4 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                {% endif %}
+                            </button>
+                        </form>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif active_household %}
+            <div class="px-4 mt-4">
+                <div class="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 flex flex-col">
+                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">현재 가계부</span>
+                    <span class="text-sm font-bold text-gray-700 truncate w-40">{{ active_household.name }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 내비게이션 -->
+            <nav class="flex-1 mt-4 px-4 space-y-1 overflow-y-auto">
+                <a href="{% url 'ledgers:dashboard' %}"
+                   onclick="closeSidebar()"
+                   class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition duration-200 group">
+                    <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="font-semibold">가계부 대시보드</span>
+                </a>
+                <a href="{% url 'ledgers:stats' %}"
+                   onclick="closeSidebar()"
+                   class="flex items-center px-4 py-3 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition duration-200 group">
+                    <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-emerald-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span class="font-semibold">통계 및 리포트 (차트)</span>
+                </a>
+                <a href="{% url 'ledgers:settings' %}"
+                   onclick="closeSidebar()"
+                   class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition duration-200 group">
+                    <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span class="font-semibold">가계부 기본 설정</span>
+                </a>
+                <hr class="border-gray-100 my-2">
+                <a href="{% url 'boards:post_list' %}"
+                   onclick="closeSidebar()"
+                   class="flex items-center px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition duration-200 group">
+                    <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                    </svg>
+                    <span class="font-semibold">커뮤니티 게시판</span>
+                </a>
+                <a href="{% url 'boards:memo_list' %}"
+                   onclick="closeSidebar()"
+                   class="flex items-center px-4 py-3 text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 rounded-xl transition duration-200 group">
+                    <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-yellow-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    <span class="font-semibold">워크스페이스 메모장</span>
+                </a>
+            </nav>
+
+            <!-- 사용자 정보 -->
+            <div class="p-4 border-t border-gray-100 flex-shrink-0">
+                <div class="bg-gray-50 rounded-2xl p-4 text-sm text-gray-500">
+                {% if request.user.is_authenticated %}
+                    <p class="font-semibold text-gray-700 truncate" title="{{ request.user.email }}">{{ request.user.email }}</p>
+                    <div class="flex items-center justify-between mt-2">
+                        <p class="text-xs text-green-600 font-bold flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-green-500 mr-1.5 inline-block"></span>접속중
+                        </p>
+                        <div class="flex items-center space-x-3">
+                            <a href="{% url 'accounts:profile_edit' %}" class="text-gray-400 hover:text-blue-500 transition" title="내 계정 설정">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </a>
+                            <form id="logout-form" action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-xs font-bold text-gray-400 hover:text-red-500 transition">로그아웃</button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <p>로그인 해주세요</p>
+                {% endif %}
+                </div>
+            </div>
+        </aside>
+        {% endif %}
+
+        <!-- ======================================================
+             메인 콘텐츠
+        ====================================================== -->
+        <main class="flex-1 lg:overflow-y-auto">
+            <!-- 배경 장식 (데스크탑) -->
+            <div class="hidden lg:block absolute top-0 right-0 -m-16 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
+            <div class="hidden lg:block absolute top-0 right-32 -m-16 w-64 h-64 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
+
+            <div class="relative px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 w-full">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+    </div><!-- /layout -->
+
+    {% block extra_scripts %}{% endblock %}
+
+    <!-- 사이드바 토글 스크립트 -->
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        const openBtn = document.getElementById('menu-open-btn');
+
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            backdrop.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
+        }
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            backdrop.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener('click', openSidebar);
+        }
+
+        // 브라우저 뒤로가기 등 크기 변경 시 데스크탑으로 전환되면 오버레이 정리
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 1024) {
+                backdrop.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+</body>
+</html>

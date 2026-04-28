@@ -1,0 +1,21 @@
+# Python/Django
+*.pyc
+*~
+__pycache__/
+venv/
+.env
+
+# Database
+db.sqlite3
+
+# Uploaded Media
+media/
+
+# Test/Debug files
+scratch.py
+debug_cats.txt
+check_err.txt
+
+# VS Code / IDE
+.vscode/
+.idea/
