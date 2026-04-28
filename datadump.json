@@ -1,0 +1,1032 @@
+[
+{
+    "model": "sessions.session",
+    "pk": "9cfz8k87xzpujwz9jl4gep9qdxmwzic2",
+    "fields": {
+        "session_data": ".eJxVjEEOwiAQRe_C2hAoMoBL956BzDBUqgaS0q6Md7dNutDtf-_9t4i4LiWuPc9xYnERWpx-N8L0zHUH_MB6bzK1uswTyV2RB-3y1ji_rof7d1Cwl60erQqO2ACcSQ8A4MghD94GMkCeARUpHC2SD8kHVsEETVvAGZVlEp8v2P04NQ:1w7iqa:zZRdTUZRBaq77u5dz6fkTTK1YbSMPA4MHAOHxAvDTEo",
+        "expire_date": "2026-04-14T23:50:12.885Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "bphgoaet9w6mev9z18feh21mp2z73twt",
+    "fields": {
+        "session_data": ".eJxVjsEOwiAQRP-FsyG0yBY8eu83kF2WSrUpSWm9GP9danrQ68y8l3kJj9ua_Fbi4kcWF9GI029GGB5x3gu-43zLMuR5XUaS-0QebZF95jhdj-2fIGFJlR6Mch2xBjhT0wJARx1ya40jDWQZUJHCwSBZF6xj5bRrqAIcURmmKsWwjs_oU67elCf-_tXvD4mCQOQ:1wHcrT:QyikthyBNqjxMxsDCoT1pHtYUgSaew77E7qAowJLoT8",
+        "expire_date": "2026-05-12T07:28:03.927Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "t9tevfuc206ivglk5ypl7muyjb26utw4",
+    "fields": {
+        "session_data": ".eJxVjEEOwiAQRe_C2hAoMoBL956BzDBUqgaS0q6Md7dNutDtf-_9t4i4LiWuPc9xYnERWpx-N8L0zHUH_MB6bzK1uswTyV2RB-3y1ji_rof7d1Cwl60erQqO2ACcSQ8A4MghD94GMkCeARUpHC2SD8kHVsEETVvAGZVlEp8v2P04NQ:1w7q6R:ni4GNAKD4Pu4L3vvIsPOt1nDcTHPF0mLBdlOrBNhbYQ",
+        "expire_date": "2026-04-15T07:35:03.354Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "yrsmaiize0pfm6y9j1tuxbp8b7152qdp",
+    "fields": {
+        "session_data": ".eJxVjsEOwiAQRP-FsyG0yBY8eu83kF2WSrUpSWm9GP9danrQ68y8l3kJj9ua_Fbi4kcWF9GI029GGB5x3gu-43zLMuR5XUaS-0QebZF95jhdj-2fIGFJlR6Mch2xBjhT0wJARx1ya40jDWQZUJHCwSBZF6xj5bRrqAIcURmmKsWwjs_oU67elCf-_tXvD4mCQOQ:1wB70z:ZELllswYwqNf71l3_NtiFTIhWdET-Z0Linu6m-kTguE",
+        "expire_date": "2026-04-24T08:14:57.868Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "z9vmiy73iwhazr72vjjwzacj7p2yzcru",
+    "fields": {
+        "session_data": ".eJxVjEEOwiAQRe_C2hAoMoBL956BzDBUqgaS0q6Md7dNutDtf-_9t4i4LiWuPc9xYnERWpx-N8L0zHUH_MB6bzK1uswTyV2RB-3y1ji_rof7d1Cwl60erQqO2ACcSQ8A4MghD94GMkCeARUpHC2SD8kHVsEETVvAGZVlEp8v2P04NQ:1w7ir0:Tklzwm4XT5iM4WMO3STh3AXTt-bI2405hotmhoIhWlA",
+        "expire_date": "2026-04-14T23:50:38.656Z"
+    }
+},
+{
+    "model": "accounts.customuser",
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$6cbd1RWZQbsSJOAcRQQCFS$AYgnYfw/zObfLdElp9OD9AxmrUnfCYeWPPrQkSc7RVY=",
+        "last_login": "2026-04-27T01:44:55.334Z",
+        "is_superuser": true,
+        "first_name": "연수",
+        "last_name": "김",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2026-03-31T23:36:45Z",
+        "email": "amdcpu00@gmail.com",
+        "last_active_household_id": 3,
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "accounts.customuser",
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$HARTx2yQ8Nj8bVLxAuoYmf$szCH0O4SWbF1yorubjnufEZKecSe/1aGiRk+fnS5RZ8=",
+        "last_login": "2026-04-10T07:54:34.204Z",
+        "is_superuser": false,
+        "first_name": "다혜",
+        "last_name": "손",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-04-01T07:28:04.822Z",
+        "email": "sonda0709@naver.com",
+        "last_active_household_id": 2,
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "ledgers.household",
+    "pk": 1,
+    "fields": {
+        "name": "amdcpu00의 개인 가계부",
+        "household_type": "personal",
+        "admin_user": [
+            "amdcpu00@gmail.com"
+        ],
+        "created_at": "2026-03-31T23:36:45.743Z",
+        "members": []
+    }
+},
+{
+    "model": "ledgers.household",
+    "pk": 2,
+    "fields": {
+        "name": "다혜의 개인 가계부",
+        "household_type": "personal",
+        "admin_user": [
+            "sonda0709@naver.com"
+        ],
+        "created_at": "2026-04-01T07:28:05.169Z",
+        "members": []
+    }
+},
+{
+    "model": "ledgers.household",
+    "pk": 3,
+    "fields": {
+        "name": "부부",
+        "household_type": "group",
+        "admin_user": [
+            "amdcpu00@gmail.com"
+        ],
+        "created_at": "2026-04-01T07:29:03.301Z",
+        "members": [
+            [
+                "amdcpu00@gmail.com"
+            ],
+            [
+                "sonda0709@naver.com"
+            ]
+        ]
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 1,
+    "fields": {
+        "household": 1,
+        "name": "💰 급여",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 2,
+    "fields": {
+        "household": 1,
+        "name": "💵 용돈/부수입",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 3,
+    "fields": {
+        "household": 1,
+        "name": "🏦 금융/이자",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 4,
+    "fields": {
+        "household": 1,
+        "name": "🏠 주거/통신",
+        "type": "expense",
+        "is_fixed": true,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 5,
+    "fields": {
+        "household": 1,
+        "name": "🏥 면허/보험/세금",
+        "type": "expense",
+        "is_fixed": true,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 6,
+    "fields": {
+        "household": 1,
+        "name": "🎓 교육/학원",
+        "type": "expense",
+        "is_fixed": true,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 7,
+    "fields": {
+        "household": 1,
+        "name": "🍔 식비",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 8,
+    "fields": {
+        "household": 1,
+        "name": "🚌 교통/차량",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 9,
+    "fields": {
+        "household": 1,
+        "name": "🎁 경조사/선물",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 10,
+    "fields": {
+        "household": 1,
+        "name": "☕ 문화/여가",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 11,
+    "fields": {
+        "household": 1,
+        "name": "🛍️ 쇼핑/뷰티",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 12,
+    "fields": {
+        "household": 1,
+        "name": "기타",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T01:42:10.197Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 13,
+    "fields": {
+        "household": 1,
+        "name": "카니발 대출",
+        "type": "expense",
+        "is_fixed": true,
+        "payment_day": null,
+        "fixed_amount": "13000",
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T02:04:43.289Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 14,
+    "fields": {
+        "household": 1,
+        "name": "덕산급여",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": 10,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T02:25:37.620Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 15,
+    "fields": {
+        "household": 2,
+        "name": "💰 급여",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 16,
+    "fields": {
+        "household": 2,
+        "name": "💵 용돈/부수입",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 17,
+    "fields": {
+        "household": 2,
+        "name": "🏦 금융/이자",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 18,
+    "fields": {
+        "household": 2,
+        "name": "🏠 주거/통신",
+        "type": "expense",
+        "is_fixed": true,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 19,
+    "fields": {
+        "household": 2,
+        "name": "🏥 면허/보험/세금",
+        "type": "expense",
+        "is_fixed": true,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 20,
+    "fields": {
+        "household": 2,
+        "name": "🎓 교육/학원",
+        "type": "expense",
+        "is_fixed": true,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 21,
+    "fields": {
+        "household": 2,
+        "name": "🍔 식비",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 22,
+    "fields": {
+        "household": 2,
+        "name": "🚌 교통/차량",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 23,
+    "fields": {
+        "household": 2,
+        "name": "🎁 경조사/선물",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 24,
+    "fields": {
+        "household": 2,
+        "name": "☕ 문화/여가",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 25,
+    "fields": {
+        "household": 2,
+        "name": "🛍️ 쇼핑/뷰티",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 26,
+    "fields": {
+        "household": 2,
+        "name": "기타",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-01T07:28:05.170Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 27,
+    "fields": {
+        "household": 1,
+        "name": "저금",
+        "type": "savings",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-07T04:49:01.819Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 28,
+    "fields": {
+        "household": 1,
+        "name": "저금 테스트",
+        "type": "savings",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-07T05:09:32.453Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 29,
+    "fields": {
+        "household": 1,
+        "name": "통장이체",
+        "type": "expense",
+        "is_fixed": false,
+        "payment_day": null,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-07T05:12:30.238Z"
+    }
+},
+{
+    "model": "ledgers.category",
+    "pk": 30,
+    "fields": {
+        "household": 3,
+        "name": "테스트",
+        "type": "income",
+        "is_fixed": false,
+        "payment_day": 10,
+        "fixed_amount": null,
+        "start_date": null,
+        "end_date": null,
+        "created_at": "2026-04-10T08:07:25.972Z"
+    }
+},
+{
+    "model": "ledgers.asset",
+    "pk": 1,
+    "fields": {
+        "household": 1,
+        "name": "기업은행",
+        "asset_type": "savings",
+        "initial_balance": "500000",
+        "is_active": true,
+        "created_at": "2026-04-07T05:09:56.782Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 3,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "9900",
+        "date": "2026-04-01",
+        "description": "아린이 식판 비용",
+        "transaction_type": "expense",
+        "category": null,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "receipts/2026/04/18814.jpg",
+        "is_deleted": false,
+        "created_at": "2026-03-31T23:47:30.199Z",
+        "updated_at": "2026-03-31T23:47:30.200Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 5,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "4000000",
+        "date": "2026-03-10",
+        "description": "연수 월급",
+        "transaction_type": "income",
+        "category": null,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-03-31T23:52:38.066Z",
+        "updated_at": "2026-03-31T23:52:38.066Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 6,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "100000",
+        "date": "2026-04-01",
+        "description": "코스트코 소갈비 외",
+        "transaction_type": "expense",
+        "category": 7,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-01T02:04:12.235Z",
+        "updated_at": "2026-04-01T02:04:12.235Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 7,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "2100000",
+        "date": "2026-04-01",
+        "description": "리코 카메라 판매 수익",
+        "transaction_type": "income",
+        "category": 2,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-01T02:43:09.867Z",
+        "updated_at": "2026-04-01T02:43:09.867Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 8,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "1000000",
+        "date": "2026-04-01",
+        "description": "손다혜 얼굴 뭐뭐 비용",
+        "transaction_type": "expense",
+        "category": 12,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-01T02:43:43.693Z",
+        "updated_at": "2026-04-01T02:43:43.693Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 9,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "1100000",
+        "date": "2026-04-01",
+        "description": "김연수 게임기? 글픽카드 구입 비용 빼놓은거",
+        "transaction_type": "expense",
+        "category": 12,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-01T02:44:16.190Z",
+        "updated_at": "2026-04-01T02:44:16.190Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 10,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "300000",
+        "date": "2026-04-01",
+        "description": "보험료 테스트 입력",
+        "transaction_type": "expense",
+        "category": 5,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-01T07:34:18.741Z",
+        "updated_at": "2026-04-01T07:34:18.741Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 11,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "5000",
+        "date": "2026-04-07",
+        "description": "저금",
+        "transaction_type": "savings",
+        "category": 27,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-07T04:50:31.634Z",
+        "updated_at": "2026-04-07T04:50:31.634Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 12,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "15000",
+        "date": "2026-04-07",
+        "description": "당근판돈",
+        "transaction_type": "transfer",
+        "category": 28,
+        "withdraw_asset": null,
+        "deposit_asset": 1,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-07T05:10:46.169Z",
+        "updated_at": "2026-04-07T05:10:46.169Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 13,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "3000",
+        "date": "2026-04-07",
+        "description": "당근판돈에서 일부 출금",
+        "transaction_type": "transfer",
+        "category": 28,
+        "withdraw_asset": 1,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-07T05:11:09.579Z",
+        "updated_at": "2026-04-07T05:11:09.579Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 14,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "500",
+        "date": "2026-04-07",
+        "description": "지출이 없네",
+        "transaction_type": "transfer",
+        "category": 28,
+        "withdraw_asset": 1,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-07T05:11:40.164Z",
+        "updated_at": "2026-04-07T05:11:40.164Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 15,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "11000",
+        "date": "2026-04-07",
+        "description": "휴",
+        "transaction_type": "expense",
+        "category": 29,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-07T05:12:55.542Z",
+        "updated_at": "2026-04-07T05:12:55.542Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 16,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "15000",
+        "date": "2026-04-07",
+        "description": "롯데이아",
+        "transaction_type": "expense",
+        "category": 7,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-07T05:13:51.112Z",
+        "updated_at": "2026-04-07T05:13:51.112Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 17,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "60000",
+        "date": "2026-04-07",
+        "description": "기업은행 통장 이체",
+        "transaction_type": "expense",
+        "category": 12,
+        "withdraw_asset": 1,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-07T05:14:16.033Z",
+        "updated_at": "2026-04-07T05:14:16.033Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 18,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "1111",
+        "date": "2026-04-08",
+        "description": "111",
+        "transaction_type": "savings_deposit",
+        "category": 28,
+        "withdraw_asset": 1,
+        "deposit_asset": 1,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-08T08:32:23.292Z",
+        "updated_at": "2026-04-08T08:32:23.292Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 19,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "999",
+        "date": "2026-04-08",
+        "description": "ㅇ",
+        "transaction_type": "savings_withdraw",
+        "category": 28,
+        "withdraw_asset": 1,
+        "deposit_asset": 1,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-08T08:32:45.037Z",
+        "updated_at": "2026-04-08T08:32:45.037Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 20,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "4400000",
+        "date": "2026-04-10",
+        "description": "3월급여",
+        "transaction_type": "income",
+        "category": 14,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-10T02:36:02.161Z",
+        "updated_at": "2026-04-10T02:36:02.161Z"
+    }
+},
+{
+    "model": "ledgers.transaction",
+    "pk": 21,
+    "fields": {
+        "household": 1,
+        "user": [
+            "amdcpu00@gmail.com"
+        ],
+        "amount": "130000",
+        "date": "2026-04-10",
+        "description": "카니발",
+        "transaction_type": "expense",
+        "category": 13,
+        "withdraw_asset": null,
+        "deposit_asset": null,
+        "image": "",
+        "is_deleted": false,
+        "created_at": "2026-04-10T02:36:50.796Z",
+        "updated_at": "2026-04-10T02:36:50.796Z"
+    }
+},
+{
+    "model": "boards.post",
+    "pk": 1,
+    "fields": {
+        "title": "test",
+        "content": "test",
+        "author": [
+            "sonda0709@naver.com"
+        ],
+        "category": "free",
+        "household": null,
+        "image": "",
+        "created_at": "2026-04-10T07:40:55.169Z",
+        "updated_at": "2026-04-10T07:40:55.169Z"
+    }
+},
+{
+    "model": "boards.post",
+    "pk": 2,
+    "fields": {
+        "title": "메모장",
+        "content": "메모",
+        "author": [
+            "sonda0709@naver.com"
+        ],
+        "category": "memo",
+        "household": 2,
+        "image": "",
+        "created_at": "2026-04-10T07:46:56.614Z",
+        "updated_at": "2026-04-10T07:46:56.614Z"
+    }
+},
+{
+    "model": "boards.comment",
+    "pk": 1,
+    "fields": {
+        "post": 1,
+        "author": [
+            "sonda0709@naver.com"
+        ],
+        "content": "되나요?",
+        "created_at": "2026-04-10T07:46:35.113Z",
+        "updated_at": "2026-04-10T07:46:35.113Z"
+    }
+},
+{
+    "model": "boards.comment",
+    "pk": 2,
+    "fields": {
+        "post": 2,
+        "author": [
+            "sonda0709@naver.com"
+        ],
+        "content": "ㄸ",
+        "created_at": "2026-04-10T07:47:00.722Z",
+        "updated_at": "2026-04-10T07:47:00.722Z"
+    }
+},
+{
+    "model": "boards.reaction",
+    "pk": 1,
+    "fields": {
+        "post": 1,
+        "user": [
+            "sonda0709@naver.com"
+        ],
+        "reaction_type": "like",
+        "created_at": "2026-04-10T07:40:56.754Z"
+    }
+}
+]
