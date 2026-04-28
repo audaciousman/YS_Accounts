@@ -10,10 +10,14 @@ def create_personal_household(sender, instance, created, **kwargs):
     유저가 새롭게 가입(생성)될 때 автоматически 개인 가계부를 만들어주는 로직
     초기 편의를 위해 자주 쓰이는 이모지가 포함된 카테고리와 기본 결제수단도 함께 자동 생성합니다.
     """
+    # 초기 데이터 복원(loaddata) 중일 때는 시그널을 실행하지 않습니다.
+    if kwargs.get('raw'):
+        return
+
     if created:
         Household = apps.get_model('ledgers', 'Household')
         Category = apps.get_model('ledgers', 'Category')
-        PaymentMethod = apps.get_model('ledgers', 'PaymentMethod')
+        Asset = apps.get_model('ledgers', 'Asset')
         
         display_name = instance.first_name if instance.first_name else instance.email.split('@')[0]
         household_name = f"{display_name}의 개인 가계부"
@@ -40,13 +44,12 @@ def create_personal_household(sender, instance, created, **kwargs):
             Category(household=household, name="☕ 문화/여가", type="expense", is_fixed=False),
             Category(household=household, name="🛍️ 쇼핑/뷰티", type="expense", is_fixed=False),
             Category(household=household, name="기타", type="expense", is_fixed=False),
+            Category(household=household, name="저금", type="savings", is_fixed=False),
         ])
 
-        # 기본 결제수단 구성
-        PaymentMethod.objects.bulk_create([
-            PaymentMethod(household=household, name="💳 신용카드"),
-            PaymentMethod(household=household, name="🏧 체크카드"),
-            PaymentMethod(household=household, name="💵 현금"),
-            PaymentMethod(household=household, name="📱 간편결제(페이)"),
-            PaymentMethod(household=household, name="계좌이체"),
+        # 기본 자산 구성
+        Asset.objects.bulk_create([
+            Asset(household=household, name="💳 기본 신용카드", asset_type='card'),
+            Asset(household=household, name="🏧 기본 입출금", asset_type='bank'),
+            Asset(household=household, name="💵 현금", asset_type='cash'),
         ])
