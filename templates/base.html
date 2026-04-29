@@ -155,7 +155,7 @@
             <div class="p-4 border-t border-gray-100 flex-shrink-0">
                 <div class="bg-gray-50 rounded-2xl p-4 text-sm text-gray-500">
                 {% if request.user.is_authenticated %}
-                    <p class="font-semibold text-gray-700 truncate" title="{{ request.user.email }}">{{ request.user.email }}</p>
+                    <p class="font-semibold text-gray-700 truncate" title="{{ request.user.email }}">{{ request.user.display_name }}</p>
                     <div class="flex items-center justify-between mt-2">
                         <p class="text-xs text-green-600 font-bold flex items-center">
                             <span class="w-2 h-2 rounded-full bg-green-500 mr-1.5 inline-block"></span>접속중

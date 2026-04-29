@@ -53,3 +53,12 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def display_name(self):
+        """
+        사용자의 이름(first_name)이 있으면 이름을, 없으면 이메일 앞부분을 반환합니다.
+        """
+        if self.first_name:
+            return self.first_name
+        return self.email.split('@')[0]

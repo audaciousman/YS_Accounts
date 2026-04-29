@@ -37,7 +37,7 @@
             </div>
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end border-t border-gray-50 pt-4 gap-4">
                 <div class="text-sm font-medium text-gray-400">
-                    작성자 <span class="text-gray-600">{{ post.author.email }}</span> <span class="mx-2">•</span> {{ post.created_at|date:"Y.m.d H:i" }}
+                    작성자 <span class="text-gray-600">{{ post.author.display_name }}</span> <span class="mx-2">•</span> {{ post.created_at|date:"Y.m.d H:i" }}
                 </div>
                 
                 <div class="flex space-x-3 w-full sm:w-auto overflow-x-auto">
@@ -69,7 +69,7 @@
                     {% for comment in post.comments.all %}
                     <div class="bg-gray-50 rounded-2xl p-4 flex flex-col space-y-2">
                         <div class="flex justify-between items-start">
-                            <span class="text-sm font-bold text-gray-800">{{ comment.author.email }}</span>
+                            <span class="text-sm font-bold text-gray-800">{{ comment.author.display_name }}</span>
                             <span class="text-xs font-medium text-gray-400">{{ comment.created_at|date:"m.d H:i" }}</span>
                         </div>
                         <p class="text-gray-700 text-sm leading-relaxed">{{ comment.content|linebreaksbr }}</p>
