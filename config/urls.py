@@ -27,6 +27,10 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
 ]
 
-# 개발 모드(DEBUG=True)일 때, 사용자가 업로드한 미디어 파일(사진, 영수증 등)을 서빙하기 위한 세팅
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# 사용자 업로드 미디어 파일 서빙 (개발/운영 모두 작동하도록 설정)
+from django.views.static import serve
+from django.urls import re_path
+
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
