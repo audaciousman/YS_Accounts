@@ -122,6 +122,7 @@ class Asset(models.Model):
     account_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="계좌번호/카드번호")
     asset_type = models.CharField(max_length=20, choices=ASSET_TYPE_CHOICES, default='bank', verbose_name="자산 유형")
     initial_balance = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="초기 잔액")
+    memo = models.TextField(blank=True, null=True, verbose_name="메모", help_text="이 자산에 대한 간략한 메모나 코멘트를 자유롭게 작성해주세요.")
     is_active = models.BooleanField(default=True, verbose_name="사용 여부")
     created_at = models.DateTimeField(auto_now_add=True)
 

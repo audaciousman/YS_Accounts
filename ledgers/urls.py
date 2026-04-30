@@ -3,7 +3,7 @@ from .views import (
     LedgerDashboardView, TransactionCreateView, TransactionUpdateView, TransactionSoftDeleteView, HouseholdSwitchView,
     LedgerSettingsView,
     CategoryCreateView, CategoryUpdateView, CategoryDeleteView,
-    AssetCreateView, AssetDeleteView, LedgerStatsView, GroupRequestCreateView, FixedTransactionQuickAddView,
+    AssetCreateView, AssetUpdateView, AssetDeleteView, LedgerStatsView, GroupRequestCreateView, FixedTransactionQuickAddView,
     TransactionBatchCreateView, download_batch_template
 )
 
@@ -28,5 +28,6 @@ urlpatterns = [
     path('settings/category/<int:pk>/edit/', CategoryUpdateView.as_view(), name='category_update'),
     path('settings/category/<int:pk>/delete/', CategoryDeleteView.as_view(), name='category_delete'),
     path('settings/asset/add/', AssetCreateView.as_view(), name='asset_create'),
+    path('settings/asset/<int:pk>/edit/', AssetUpdateView.as_view(), name='asset_update'),
     path('settings/asset/<int:pk>/delete/', AssetDeleteView.as_view(), name='asset_delete'),
 ]

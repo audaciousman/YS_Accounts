@@ -575,7 +575,7 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
 
 class AssetCreateView(LoginRequiredMixin, CreateView):
     model    = Asset
-    fields   = ['name', 'bank_name', 'account_number', 'asset_type', 'initial_balance']
+    fields   = ['name', 'bank_name', 'account_number', 'asset_type', 'initial_balance', 'memo']
     template_name = 'ledgers/asset_form.html'
 
     def get_success_url(self):
@@ -587,6 +587,22 @@ class AssetCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.household = get_active_household(self.request)
         return super().form_valid(form)
+
+
+class AssetUpdateView(LoginRequiredMixin, UpdateView):
+    model    = Asset
+    fields   = ['name', 'bank_name', 'account_number', 'asset_type', 'initial_balance', 'memo']
+    template_name = 'ledgers/asset_form.html'
+
+    def get_success_url(self):
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('ledgers:settings')
+
+    def get_queryset(self):
+        household = get_active_household(self.request)
+        return Asset.objects.filter(household=household)
 
 
 class AssetDeleteView(LoginRequiredMixin, DeleteView):
