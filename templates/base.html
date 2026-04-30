@@ -31,7 +31,7 @@
             <!-- 로고 -->
             <a href="{% url 'ledgers:dashboard' %}"
                class="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                Smart Ledger
+                스마트 가계부
             </a>
             <!-- 햄버거 버튼 -->
             <button id="menu-open-btn"
@@ -68,9 +68,10 @@
 
             <!-- 사이드바 상단 -->
             <div class="h-16 flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0">
-                <a href="{% url 'ledgers:dashboard' %}"
-                   class="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-80 transition">
-                    Smart Ledger
+                <a href="{% url 'ledgers:dashboard' %}" class="flex items-center gap-2 group">
+                <span class="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:from-indigo-600 group-hover:to-blue-600 transition-all duration-300">
+                    스마트 가계부
+                </span>
                 </a>
                 <!-- 모바일 닫기 버튼 -->
                 <button id="menu-close-btn"
