@@ -138,7 +138,9 @@ class CommentCreateView(LoginRequiredMixin, View):
             )
             
         # 기존 체류하던 리스트 페이지로 복귀하되, 방금 작성한 댓글창이 열려있도록 파라미터 추가
-        referer = request.META.get('HTTP_REFERER', reverse('boards:post_list'))
+        referer = request.META.get('HTTP_REFERER')
+        if not referer:
+            referer = reverse('boards:post_list', kwargs={'board_id': post_obj.board_id})
         from urllib.parse import urlparse, urlencode, urlunparse, parse_qsl
         
         parsed = urlparse(referer)
