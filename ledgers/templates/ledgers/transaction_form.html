@@ -296,33 +296,45 @@
             }
         }
         
-        function updateAmountTexts() {
+        function updateDynamicTexts() {
             const selectedType = typeSelect.value;
             const amountLabel = document.querySelector(`label[for="{{ form.amount.id_for_label }}"]`);
+            const descInput = document.getElementById('{{ form.description.id_for_label }}');
             
             if (selectedType === 'income') {
                 if(amountLabel) amountLabel.textContent = '수입 금액 (원)';
                 amountInput.placeholder = '수입을 입력하세요 (예: 2500000)';
+                if(descInput) descInput.placeholder = '수입 내역(예: 알바비)';
             } else if (selectedType === 'transfer') {
                 if(amountLabel) amountLabel.textContent = '이체 금액 (원)';
                 amountInput.placeholder = '얼마를 이체하셨나요? (예: 15000)';
-            } else { // expense, savings 등
+                if(descInput) descInput.placeholder = '단순 이체합니다. (예: 친구 계좌 이체용)';
+            } else if (selectedType === 'savings_deposit') {
                 if(amountLabel) amountLabel.textContent = '결제 금액 (원)';
                 amountInput.placeholder = '얼마를 결제하셨나요? (예: 15000)';
+                if(descInput) descInput.placeholder = '저축을 하시나요? 예) 용돈 입금';
+            } else if (selectedType === 'savings_withdraw') {
+                if(amountLabel) amountLabel.textContent = '결제 금액 (원)';
+                amountInput.placeholder = '얼마를 결제하셨나요? (예: 15000)';
+                if(descInput) descInput.placeholder = '저축을 깨시나요? 예) 용돈 사용';
+            } else { // expense
+                if(amountLabel) amountLabel.textContent = '결제 금액 (원)';
+                amountInput.placeholder = '얼마를 결제하셨나요? (예: 15000)';
+                if(descInput) descInput.placeholder = '어디서 사용하셨나요? (예: 점심 스타벅스 커피)';
             }
         }
         
         typeSelect.addEventListener('change', function() {
             filterCategories();
             toggleAssetFields();
-            updateAmountTexts();
+            updateDynamicTexts();
         });
         amountInput.addEventListener('input', formatAmountDisplay);
 
         // 화면에 처음 들어왔을 때도 호출하여 기본 필터 적용
         filterCategories();
         toggleAssetFields();
-        updateAmountTexts();
+        updateDynamicTexts();
         formatAmountDisplay();
 
         // 이미지 미리보기 및 클립보드 붙여넣기 로직
