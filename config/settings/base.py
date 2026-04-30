@@ -33,6 +33,7 @@ DJANGO_APPS = [
 
 # 써드파티 앱들도 여기에 추가할 수 있습니다.
 THIRD_PARTY_APPS = [
+    'simple_history',
 ]
 
 # INSTALL_APPS 통합
@@ -48,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 # 최상위 URL 설정 파일 지정
@@ -66,6 +68,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'ledgers.context_processors.household_context',
+                'boards.context_processors.user_boards',
             ],
         },
     },

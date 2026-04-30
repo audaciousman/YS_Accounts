@@ -41,15 +41,34 @@
                 {{ post.content|linebreaks }}
             </div>
             
-            {% if post.image %}
-            <div class="mt-4">
-                <img src="{{ post.image.url }}" alt="첨부 이미지" class="max-h-96 rounded-2xl border border-yellow-200">
+            {% if post.media_files.exists %}
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {% for media in post.media_files.all %}
+                    {% if media.media_type == 'image' %}
+                        <img src="{{ media.file.url }}" alt="첨부 이미지" class="w-full h-auto rounded-2xl border border-yellow-200 object-cover max-h-96">
+                    {% else %}
+                        <video controls class="w-full h-auto rounded-2xl border border-yellow-200 object-cover max-h-96">
+                            <source src="{{ media.file.url }}" type="video/mp4">
+                            브라우저가 동영상을 지원하지 않습니다.
+                        </video>
+                    {% endif %}
+                {% endfor %}
             </div>
             {% endif %}
             
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end border-t border-yellow-200 pt-4 mt-6 gap-4">
-                <div class="text-sm font-medium text-yellow-600/60">
-                    기록자 <span class="text-yellow-700">{{ post.author.display_name }}</span> <span class="mx-2">•</span> {{ post.created_at|date:"Y.m.d H:i" }}
+                <div class="flex items-center gap-3">
+                    {% if post.author.profile_image %}
+                        <img src="{{ post.author.profile_image.url }}" alt="Profile" class="w-10 h-10 rounded-full object-cover shadow-sm border border-yellow-200 bg-white">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 font-bold shadow-sm border border-yellow-200">
+                            {{ post.author.display_name|slice:":1" }}
+                        </div>
+                    {% endif %}
+                    <div class="text-sm font-medium text-yellow-600/80">
+                        <span class="text-yellow-800 font-bold">{{ post.author.display_name }}</span>
+                        <div class="text-xs text-yellow-600/60 mt-0.5">{{ post.created_at|date:"Y.m.d H:i" }}</div>
+                    </div>
                 </div>
                 
                 <div class="flex space-x-3 w-full sm:w-auto overflow-x-auto">

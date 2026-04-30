@@ -7,8 +7,10 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, V
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.shortcuts import redirect, get_object_or_404
-from django.http import HttpResponseRedirect
+import csv
+from django.shortcuts import redirect, get_object_or_404, reverse, render
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.contrib import messages
 from .models import Transaction, Household, Category, Asset
 from .forms import TransactionForm
 
@@ -222,6 +224,10 @@ class LedgerDashboardView(LoginRequiredMixin, ListView):
             qs.filter(transaction_type='expense', category__isnull=True)
             .aggregate(t=Sum('amount'))['t'] or 0
         )
+        
+        # 고정비 퀵적용 모달을 위한 자산 목록
+        if household:
+            context['active_assets'] = Asset.objects.filter(household=household, is_active=True)
 
         return context
 
@@ -427,6 +433,18 @@ class TransactionSoftDeleteView(LoginRequiredMixin, View):
         return HttpResponseRedirect(referer)
 
 
+class GroupRequestCreateView(LoginRequiredMixin, CreateView):
+    from .models import GroupRequest
+    from .forms import GroupRequestForm
+    model = GroupRequest
+    form_class = GroupRequestForm
+    template_name = 'ledgers/group_request_form.html'
+    success_url = reverse_lazy('ledgers:dashboard')
+
+    def form_valid(self, form):
+        form.instance.requester = self.request.user
+        return super().form_valid(form)
+
 class TransactionCreateView(LoginRequiredMixin, CreateView):
     model = Transaction
     form_class = TransactionForm
@@ -447,6 +465,28 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         form.instance.user = self.request.user
         form.instance.household = get_active_household(self.request)
         return super().form_valid(form)
+
+class TransactionUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    기존 가계부 내역을 수정하는 뷰
+    """
+    model = Transaction
+    form_class = TransactionForm
+    template_name = 'ledgers/transaction_form.html'
+    
+    def get_success_url(self):
+        # 성공 시 대시보드로 돌아갑니다.
+        return reverse_lazy('ledgers:dashboard')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['household'] = get_active_household(self.request)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['active_household'] = get_active_household(self.request)
+        return context
 
 
 # ── 가계부 설정 관리 ────────────────────────────────────────────────────────────
@@ -493,7 +533,12 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
     model    = Category
     fields   = ['name', 'type', 'is_fixed', 'payment_day', 'fixed_amount', 'start_date', 'end_date']
     template_name = 'ledgers/category_form.html'
-    success_url   = reverse_lazy('ledgers:settings')
+
+    def get_success_url(self):
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('ledgers:settings')
 
     def form_valid(self, form):
         form.instance.household = get_active_household(self.request)
@@ -504,7 +549,12 @@ class CategoryUpdateView(LoginRequiredMixin, UpdateView):
     model    = Category
     fields   = ['name', 'type', 'is_fixed', 'payment_day', 'fixed_amount', 'start_date', 'end_date']
     template_name = 'ledgers/category_form.html'
-    success_url   = reverse_lazy('ledgers:settings')
+
+    def get_success_url(self):
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('ledgers:settings')
 
     def get_queryset(self):
         household = get_active_household(self.request)
@@ -525,9 +575,14 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
 
 class AssetCreateView(LoginRequiredMixin, CreateView):
     model    = Asset
-    fields   = ['name', 'asset_type', 'initial_balance']
+    fields   = ['name', 'bank_name', 'account_number', 'asset_type', 'initial_balance']
     template_name = 'ledgers/asset_form.html'
-    success_url   = reverse_lazy('ledgers:settings')
+
+    def get_success_url(self):
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('ledgers:settings')
 
     def form_valid(self, form):
         form.instance.household = get_active_household(self.request)
@@ -544,3 +599,142 @@ class AssetDeleteView(LoginRequiredMixin, DeleteView):
     def get_queryset(self):
         household = get_active_household(self.request)
         return Asset.objects.filter(household=household)
+
+
+class FixedTransactionQuickAddView(LoginRequiredMixin, View):
+    """
+    고정비 항목을 대시보드에서 빠르게 적용(생성)하는 뷰
+    """
+    def post(self, request, *args, **kwargs):
+        household = get_active_household(request)
+        if not household:
+            messages.error(request, '가계부를 찾을 수 없습니다.')
+            return redirect('ledgers:dashboard')
+
+        category_id = request.POST.get('category_id')
+        date_str = request.POST.get('date')
+        amount_str = request.POST.get('amount')
+        description = request.POST.get('description')
+        withdraw_asset_id = request.POST.get('withdraw_asset_id')
+
+        try:
+            category = Category.objects.get(id=category_id, household=household)
+            withdraw_asset = Asset.objects.get(id=withdraw_asset_id, household=household)
+            amount = int(amount_str)
+            tx_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+
+            Transaction.objects.create(
+                household=household,
+                user=request.user,
+                date=tx_date,
+                transaction_type='expense',
+                category=category,
+                withdraw_asset=withdraw_asset,
+                amount=amount,
+                description=description
+            )
+            messages.success(request, f'[{category.name}] 고정비가 내역에 적용되었습니다.')
+        except Exception as e:
+            messages.error(request, f'고정비 적용 중 오류가 발생했습니다: {str(e)}')
+
+        # 돌아갈 곳이 있으면 돌아가기
+        referer = request.META.get('HTTP_REFERER', reverse('ledgers:dashboard'))
+        return HttpResponseRedirect(referer)
+
+
+def download_batch_template(request):
+    """
+    일괄 추가용 CSV 템플릿 파일 다운로드 제공
+    """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="transaction_batch_template.csv"'
+    # 한글 깨짐 방지를 위한 BOM 추가
+    response.write('\ufeff'.encode('utf8'))
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        '날짜(YYYY-MM-DD)', 
+        '유형(수입/지출/이체/저축 넣기/저축 빼기)', 
+        '분류명', 
+        '출금자산명', 
+        '입금자산명', 
+        '금액', 
+        '내역(적요)'
+    ])
+    # 예시 데이터 제공
+    writer.writerow(['2026-04-10', '지출', '식비', '메인 카드', '', '15000', '점심 식사'])
+    writer.writerow(['2026-04-10', '수입', '급여', '', '급여통장', '3000000', '4월 급여'])
+    writer.writerow(['2026-04-11', '이체', '', '급여통장', '메인 카드', '500000', '카드대금 이체'])
+    
+    return response
+
+
+class TransactionBatchCreateView(LoginRequiredMixin, View):
+    """
+    가계부 내역 일괄 추가 화면 및 JSON 처리 API
+    """
+    def get(self, request, *args, **kwargs):
+        household = get_active_household(request)
+        if not household:
+            messages.error(request, '활성화된 가계부가 없습니다.')
+            return redirect('ledgers:dashboard')
+            
+        categories = list(Category.objects.filter(household=household).values('id', 'name', 'type'))
+        assets = list(Asset.objects.filter(household=household, is_active=True).values('id', 'name'))
+        
+        context = {
+            'active_household': household,
+            'categories_json': json.dumps(categories),
+            'assets_json': json.dumps(assets),
+        }
+        return render(request, 'ledgers/transaction_batch_form.html', context)
+        
+    def post(self, request, *args, **kwargs):
+        household = get_active_household(request)
+        if not household:
+            return JsonResponse({'success': False, 'message': '활성화된 가계부가 없습니다.'})
+            
+        try:
+            data = json.loads(request.body)
+            transactions_data = data.get('transactions', [])
+            
+            created_count = 0
+            for row in transactions_data:
+                # 데이터 추출
+                date_str = row.get('date')
+                tx_type = row.get('type')
+                category_id = row.get('category_id')
+                withdraw_id = row.get('withdraw_asset_id')
+                deposit_id = row.get('deposit_asset_id')
+                amount = int(row.get('amount', 0))
+                description = row.get('description', '')
+                
+                # 빈 행 스킵
+                if not date_str or not tx_type or not amount or not description:
+                    continue
+                    
+                tx_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                
+                # 객체 조회
+                category = Category.objects.filter(id=category_id, household=household).first() if category_id else None
+                withdraw = Asset.objects.filter(id=withdraw_id, household=household).first() if withdraw_id else None
+                deposit = Asset.objects.filter(id=deposit_id, household=household).first() if deposit_id else None
+                
+                Transaction.objects.create(
+                    household=household,
+                    user=request.user,
+                    date=tx_date,
+                    transaction_type=tx_type,
+                    category=category,
+                    withdraw_asset=withdraw,
+                    deposit_asset=deposit,
+                    amount=amount,
+                    description=description
+                )
+                created_count += 1
+                
+            messages.success(request, f'성공적으로 {created_count}건의 내역을 일괄 등록했습니다.')
+            return JsonResponse({'success': True, 'redirect_url': reverse('ledgers:dashboard')})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'오류가 발생했습니다: {str(e)}'})

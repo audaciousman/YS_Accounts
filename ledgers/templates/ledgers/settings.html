@@ -207,7 +207,13 @@
                             </div>
                             <div class="mt-1">
                                 <span class="text-xs text-gray-400 font-bold bg-gray-100 px-1.5 py-0.5 rounded mr-1">{{ asset.get_asset_type_display }}</span>
-                                <span class="text-xs font-black text-indigo-500">{{ asset.initial_balance|intcomma }}원 (초기)</span>
+                                {% if asset.bank_name %}
+                                <span class="text-xs text-gray-500 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 mr-1">{{ asset.bank_name }}</span>
+                                {% endif %}
+                                {% if asset.account_number %}
+                                <span class="text-xs text-gray-400 font-mono">{{ asset.account_number }}</span>
+                                {% endif %}
+                                <span class="text-xs font-black text-indigo-500 block mt-1">{{ asset.initial_balance|intcomma }}원 (초기)</span>
                             </div>
                         </div>
                         <form method="post" action="{% url 'ledgers:asset_delete' asset.id %}" onsubmit="return confirm('{{ asset.name }}를 삭제하시겠습니까?\n과거 내역에서 해당 자산은 지워집니다!');">

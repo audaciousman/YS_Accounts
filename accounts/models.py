@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 class CustomUserManager(BaseUserManager):
     """
@@ -45,11 +46,21 @@ class CustomUser(AbstractUser):
     # createsuperuser 명령 시 추가로 받을 필드를 지정 (여기서는 없음)
     REQUIRED_FIELDS = []
 
+    # 사용자 추가 정보 (프로필 확장)
+    profile_image = models.ImageField('프로필 사진', upload_to='profiles/%Y/%m/', blank=True, null=True)
+    address = models.CharField('집 주소', max_length=255, blank=True)
+    bio = models.TextField('자기소개', max_length=500, blank=True)
+
     # 사용자가 마지막으로 활성화했던 가계부 ID를 기억하는 보조 필드
     last_active_household_id = models.IntegerField(null=True, blank=True)
 
-    # 위에서 정의한 매니저 객체 연결
+    history = HistoricalRecords()
+
     objects = CustomUserManager()
+
+    class Meta:
+        verbose_name = '사용자 (User)'
+        verbose_name_plural = '사용자 목록 (Users)'
 
     def __str__(self):
         return self.email

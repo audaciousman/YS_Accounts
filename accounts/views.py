@@ -1,7 +1,11 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import PasswordChangeView
+from django.contrib.auth import login
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
 from .forms import SignUpForm, UserProfileUpdateForm
 from .models import CustomUser
 
@@ -36,3 +40,49 @@ class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     """
     template_name = 'registration/password_change_form.html'
     success_url = reverse_lazy('ledgers:dashboard')
+
+
+class ImpersonateUserView(UserPassesTestMixin, View):
+    """
+    최고관리자가 다른 유저로 대리 로그인하는 뷰
+    """
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get(self, request, pk, *args, **kwargs):
+        target_user = get_object_or_404(CustomUser, pk=pk)
+        
+        # 현재 최고 관리자 ID를 세션에 저장
+        impersonator_id = request.user.id
+        
+        # 대상 유저로 로그인
+        login(request, target_user, backend='django.contrib.auth.backends.ModelBackend')
+        
+        # 세션에 복귀용 ID 기록
+        request.session['impersonator_id'] = impersonator_id
+        
+        messages.success(request, f'{target_user.email} 계정으로 대리 로그인 되었습니다.')
+        return redirect('ledgers:dashboard')
+
+
+class UnimpersonateUserView(LoginRequiredMixin, View):
+    """
+    대리 로그인을 종료하고 원래 최고관리자 계정으로 복귀하는 뷰
+    """
+    def get(self, request, *args, **kwargs):
+        impersonator_id = request.session.get('impersonator_id')
+        if not impersonator_id:
+            messages.error(request, '대리 로그인 상태가 아닙니다.')
+            return redirect('ledgers:dashboard')
+            
+        impersonator = get_object_or_404(CustomUser, pk=impersonator_id)
+        
+        # 관리자 계정으로 다시 로그인
+        login(request, impersonator, backend='django.contrib.auth.backends.ModelBackend')
+        
+        # 세션에서 대리 로그인 정보 삭제
+        if 'impersonator_id' in request.session:
+            del request.session['impersonator_id']
+            
+        messages.success(request, '원래 관리자 계정으로 복귀했습니다.')
+        return redirect('admin:accounts_customuser_changelist')

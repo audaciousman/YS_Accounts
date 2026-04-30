@@ -2,11 +2,43 @@ import json
 from django.http import JsonResponse, HttpResponseRedirect
 from django.views import View
 from django.urls import reverse_lazy, reverse
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q, F, Count
+from django.core.exceptions import PermissionDenied
 from ledgers.views import get_active_household
-from .models import Post, Reaction, Comment, CommentReaction
+from .models import Board, Post, Reaction, Comment, CommentReaction
+
+class CommunityHomeView(LoginRequiredMixin, View):
+    """
+    모든 커뮤니티 게시판의 최신글/인기글을 모아서 보여주는 포털 대문 뷰
+    """
+    def get(self, request, *args, **kwargs):
+        # 1. 사용자가 볼 수 있는 게시판들
+        boards = Board.objects.filter(
+            Q(allowed_users=request.user) | Q(allowed_groups__in=request.user.groups.all()) | Q(allowed_groups__isnull=True, allowed_users__isnull=True)
+        ).distinct()
+        
+        # 2. 글로벌 인기글 (조회수 기준 상위 5개)
+        hot_posts = Post.objects.filter(board__in=boards).select_related('board', 'author').prefetch_related('comments').order_by('-views', '-created_at')[:5]
+        
+        # 3. 각 게시판별 최신글 5개씩 묶기
+        board_latest_posts = []
+        for b in boards:
+            latest = Post.objects.filter(board=b).select_related('author').prefetch_related('comments').order_by('-created_at')[:5]
+            if latest.exists():
+                board_latest_posts.append({
+                    'board': b,
+                    'posts': latest
+                })
+                
+        context = {
+            'hot_posts': hot_posts,
+            'board_latest_posts': board_latest_posts,
+        }
+        return render(request, 'boards/community_home.html', context)
+
 
 class PostReactionView(LoginRequiredMixin, View):
     """
@@ -119,71 +151,206 @@ class CommentCreateView(LoginRequiredMixin, View):
         
         return HttpResponseRedirect(new_url)
 
-class PostListView(ListView):
+class PostListView(LoginRequiredMixin, ListView):
     """
-    게시판의 글 목록을 보여주며 카테고리 필터링이 가능합니다.
+    특정 게시판(Board)의 글 목록을 보여주며, 권한을 체크합니다.
     """
     model = Post
     template_name = 'boards/post_list.html'
     context_object_name = 'posts'
     
-    def get_queryset(self):
-        # 퍼블릭 게시물만 가져오기 (가계부에 종속되지 않은 글)
-        qs = super().get_queryset().filter(household__isnull=True)
-        category = self.request.GET.get('category')
-        if category:
-            qs = qs.filter(category=category)
+    def dispatch(self, request, *args, **kwargs):
+        board_id = self.kwargs.get('board_id')
+        if not board_id:
+            # 기본 게시판 찾기 (내가 권한 있는 첫 번째 게시판)
+            first_board = Board.objects.filter(
+                Q(allowed_users=request.user) | Q(allowed_groups__in=request.user.groups.all()) | Q(allowed_groups__isnull=True, allowed_users__isnull=True)
+            ).distinct().first()
+            if first_board:
+                return redirect('boards:post_list', board_id=first_board.id)
+            else:
+                self.board = None
+                return super().dispatch(request, *args, **kwargs)
         
-        # [쿼리셋 최적화] 작성자(author) 및 댓글/댓글 작성자에 대한 N+1 문제 완전 예방
-        return qs.select_related('author').prefetch_related('comments', 'comments__author').order_by('-created_at')
+        self.board = get_object_or_404(Board, id=board_id)
+        
+        # 권한 체크
+        if self.board.allowed_users.exists() or self.board.allowed_groups.exists():
+            has_access = self.board.allowed_users.filter(id=request.user.id).exists() or \
+                         self.board.allowed_groups.filter(id__in=request.user.groups.all()).exists()
+            if not has_access and not request.user.is_superuser:
+                raise PermissionDenied("이 게시판에 접근할 권한이 없습니다.")
+                
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        if not self.board:
+            return Post.objects.none()
+        qs = super().get_queryset().filter(board=self.board)
+        # [쿼리셋 최적화] 작성자(author), 댓글 및 미디어 파일에 대한 N+1 문제 완전 예방
+        return qs.select_related('author').prefetch_related('comments', 'comments__author', 'media_files').order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_category'] = self.request.GET.get('category', 'all')
+        context['current_board'] = self.board
+        
+        is_board_admin = False
+        if self.board and self.request.user.is_authenticated:
+            if self.request.user.is_superuser or self.request.user.is_staff:
+                is_board_admin = True
+            elif self.board.board_admins.filter(id=self.request.user.id).exists():
+                is_board_admin = True
+        
+        context['is_board_admin'] = is_board_admin
+        
+        # 인기글 추가 (조회수 기준)
+        if self.board:
+            context['popular_posts'] = self.get_queryset().order_by('-views')[:3]
+            
+        return context
+
+class PostDetailView(LoginRequiredMixin, DetailView):
+    """
+    게시글 상세 화면을 보여주며, 권한을 체크하고 조회수를 증가시킵니다.
+    """
+    model = Post
+    template_name = 'boards/post_detail.html'
+    context_object_name = 'post'
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        # 조회수 증가 로직 (세션을 활용해 중복 조회 방지)
+        viewed_session_key = f'viewed_post_{self.object.id}'
+        if not request.session.get(viewed_session_key, False):
+            self.object.views += 1
+            self.object.save(update_fields=['views'])
+            request.session[viewed_session_key] = True
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        self.board = self.object.board
+        context['current_board'] = self.board
+        
+        is_board_admin = False
+        if self.board and self.request.user.is_authenticated:
+            if self.request.user.is_superuser or self.request.user.is_staff:
+                is_board_admin = True
+            elif self.board.board_admins.filter(id=self.request.user.id).exists():
+                is_board_admin = True
+        
+        context['is_board_admin'] = is_board_admin
         return context
 
 class PostCreateView(LoginRequiredMixin, CreateView):
     """
-    새로운 게시글을 작성하는 뷰
+    특정 게시판에 새로운 게시글을 작성하는 뷰
     """
     model = Post
-    fields = ['title', 'category', 'content', 'image']
+    fields = ['title', 'content']
     template_name = 'boards/post_form.html'
-    success_url = reverse_lazy('boards:post_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.board = get_object_or_404(Board, id=self.kwargs.get('board_id'))
+        if self.board.allowed_users.exists() or self.board.allowed_groups.exists():
+            has_access = self.board.allowed_users.filter(id=request.user.id).exists() or \
+                         self.board.allowed_groups.filter(id__in=request.user.groups.all()).exists()
+            if not has_access and not request.user.is_superuser:
+                raise PermissionDenied("이 게시판에 글을 쓸 권한이 없습니다.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('boards:post_list', kwargs={'board_id': self.board.id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_board'] = self.board
+        return context
 
     def form_valid(self, form):
         # 작성자를 현재 로그인한 유저로 자동 설정합니다.
         form.instance.author = self.request.user
+        form.instance.board = self.board
         form.instance.household = None
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        
+        # 업로드된 다중 파일 처리
+        files = self.request.FILES.getlist('media_files')
+        for f in files:
+            # 파일 확장자를 기반으로 미디어 타입 판단
+            ext = f.name.split('.')[-1].lower()
+            media_type = 'video' if ext in ['mp4', 'mov', 'avi', 'wmv', 'webm'] else 'image'
+            from .models import PostMedia
+            PostMedia.objects.create(post=self.object, file=f, media_type=media_type)
+            
+        return response
 
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """
-    작성자 본인만 수정할 수 있도록 권한(UserPassesTestMixin)을 통제하는 수정 뷰
+    작성자 본인만 수정할 수 있도록 권한을 통제하는 수정 뷰
     """
     model = Post
-    fields = ['title', 'category', 'content', 'image']
+    fields = ['title', 'content']
     template_name = 'boards/post_form.html'
-    success_url = reverse_lazy('boards:post_list')
+
+    def get_success_url(self):
+        return reverse('boards:post_list', kwargs={'board_id': self.object.board.id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_board'] = self.object.board
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        
+        # 삭제할 미디어 처리
+        delete_media_ids = self.request.POST.getlist('delete_media')
+        if delete_media_ids:
+            from .models import PostMedia
+            PostMedia.objects.filter(id__in=delete_media_ids, post=self.object).delete()
+            
+        # 새로 업로드된 다중 파일 처리
+        files = self.request.FILES.getlist('media_files')
+        for f in files:
+            ext = f.name.split('.')[-1].lower()
+            media_type = 'video' if ext in ['mp4', 'mov', 'avi', 'wmv', 'webm'] else 'image'
+            from .models import PostMedia
+            PostMedia.objects.create(post=self.object, file=f, media_type=media_type)
+        return response
 
     # UserPassesTestMixin에서 체크하는 권한 검증 메서드입니다.
     def test_func(self):
         post = self.get_object()
-        # 로그인 사용자와 게시글 소유자가 일치해야 True 반환 (접근 허용)
-        return self.request.user == post.author
+        # 작성자 본인이거나, 최고 관리자, 스태프, 또는 이 게시판의 관리자인 경우 허용
+        if self.request.user == post.author:
+            return True
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            return True
+        if post.board and post.board.board_admins.filter(id=self.request.user.id).exists():
+            return True
+        return False
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """
-    작성자 본인만 삭제할 수 있는 삭제 뷰
+    작성자 본인 및 게시판 관리자가 삭제할 수 있는 삭제 뷰
     """
     model = Post
     template_name = 'boards/post_confirm_delete.html'
-    success_url = reverse_lazy('boards:post_list')
 
-    # 수정과 동일하게 작성자 본인 확인
+    def get_success_url(self):
+        return reverse('boards:post_list', kwargs={'board_id': self.object.board.id})
+
+    # 수정과 동일한 권한 확인
     def test_func(self):
         post = self.get_object()
-        return self.request.user == post.author
+        if self.request.user == post.author:
+            return True
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            return True
+        if post.board and post.board.board_admins.filter(id=self.request.user.id).exists():
+            return True
+        return False
 
 
 # ── 개인/워크스페이스 전용 메모 기능 ──────────────────────────────────────────
@@ -200,7 +367,7 @@ class MemoListView(LoginRequiredMixin, ListView):
         active_hh = get_active_household(self.request)
         if not active_hh:
             return Post.objects.none()
-        return Post.objects.filter(household=active_hh).select_related('author').prefetch_related('comments', 'comments__author').order_by('-created_at')
+        return Post.objects.filter(household=active_hh).select_related('author').prefetch_related('comments', 'comments__author', 'media_files').order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -209,7 +376,7 @@ class MemoListView(LoginRequiredMixin, ListView):
 
 class MemoCreateView(LoginRequiredMixin, CreateView):
     model = Post
-    fields = ['title', 'content', 'image']  # 카테고리 선택 제외
+    fields = ['title', 'content']  # 카테고리 선택 제외
     template_name = 'boards/post_form.html'
     success_url = reverse_lazy('boards:memo_list')
 
@@ -222,11 +389,20 @@ class MemoCreateView(LoginRequiredMixin, CreateView):
         form.instance.author = self.request.user
         form.instance.category = 'memo'
         form.instance.household = get_active_household(self.request)
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        
+        files = self.request.FILES.getlist('media_files')
+        for f in files:
+            ext = f.name.split('.')[-1].lower()
+            media_type = 'video' if ext in ['mp4', 'mov', 'avi', 'wmv', 'webm'] else 'image'
+            from .models import PostMedia
+            PostMedia.objects.create(post=self.object, file=f, media_type=media_type)
+            
+        return response
 
 class MemoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
-    fields = ['title', 'content', 'image']
+    fields = ['title', 'content']
     template_name = 'boards/post_form.html'
     success_url = reverse_lazy('boards:memo_list')
 
@@ -234,6 +410,16 @@ class MemoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['is_memo'] = True
         return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        files = self.request.FILES.getlist('media_files')
+        for f in files:
+            ext = f.name.split('.')[-1].lower()
+            media_type = 'video' if ext in ['mp4', 'mov', 'avi', 'wmv', 'webm'] else 'image'
+            from .models import PostMedia
+            PostMedia.objects.create(post=self.object, file=f, media_type=media_type)
+        return response
 
     def test_func(self):
         post = self.get_object()

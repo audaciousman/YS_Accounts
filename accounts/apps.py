@@ -3,6 +3,7 @@ from django.apps import AppConfig
 class AccountsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'accounts'
+    verbose_name = '1. 계정 및 프로필 관리 (Accounts)'
 
     def ready(self):
         """

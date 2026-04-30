@@ -37,4 +37,4 @@ class UserProfileUpdateForm(forms.ModelForm):
     """
     class Meta:
         model = CustomUser
-        fields = ('last_name', 'first_name')
+        fields = ('last_name', 'first_name', 'profile_image', 'address', 'bio')

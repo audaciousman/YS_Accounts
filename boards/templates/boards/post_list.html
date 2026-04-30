@@ -1,222 +1,179 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}커뮤니티 게시판{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-8 mt-4">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-5">
+<div class="max-w-6xl mx-auto space-y-6 mt-4 px-4">
+    <!-- 게시판 헤더 -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-5 border-b-2 border-gray-800">
         <div>
-            <h2 class="text-4xl font-extrabold text-gray-800 tracking-tight">커뮤니티 <span class="text-indigo-600">({% if current_category == 'all' %}전체{% else %}{{ current_category }}{% endif %})</span></h2>
-            <p class="text-gray-500 mt-2 text-lg">가계부 꿀팁과 고민을 함께 나눠요.</p>
-        </div>
-        <!-- 글쓰기 버튼 -->
-        <a href="{% url 'boards:post_create' %}" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-6 rounded-xl shadow flex items-center transition transform hover:-translate-y-1">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-            글쓰기
-        </a>
-    </div>
-
-    <!-- 게시글 목록 -->
-    <div class="space-y-6">
-        {% for post in posts %}
-        <div id="post-{{ post.id }}" class="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 hover:shadow-lg transition duration-300 transform hover:-translate-y-1 relative">
-            {% if request.user == post.author %}
-            <div class="absolute top-6 right-6 flex space-x-2">
-                <a href="{% url 'boards:post_edit' post.id %}" class="text-gray-400 hover:text-blue-500 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                </a>
-                <a href="{% url 'boards:post_delete' post.id %}" class="text-gray-400 hover:text-red-500 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </a>
+            <div class="flex items-center gap-3">
+                <h2 class="text-3xl font-black text-gray-900 tracking-tight">{% if current_board %}{{ current_board.name }}{% else %}커뮤니티 전체{% endif %}</h2>
+                {% if current_board %}
+                    <span class="text-xs font-bold px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                        {% if current_board.list_style == 'webzine' %}웹진형{% else %}게시판형{% endif %}
+                    </span>
+                {% endif %}
+            </div>
+            <p class="text-gray-500 mt-2 text-sm">{% if current_board %}{{ current_board.description }}{% else %}모든 게시판의 글을 확인하세요.{% endif %}</p>
+            {% if current_board and current_board.board_admins.exists %}
+            <div class="mt-3 flex items-center text-xs text-gray-500 font-medium bg-gray-50 px-3 py-1.5 rounded-lg inline-block">
+                <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                관리자: 
+                {% for admin in current_board.board_admins.all %}
+                    <span class="font-bold text-gray-700 ml-1">{{ admin.display_name }}</span>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
             </div>
             {% endif %}
-            <div class="flex space-x-2 mb-3">
-                {% if post.category == 'free' %}
-                <span class="text-xs font-bold px-3 py-1 bg-gray-100 text-gray-600 rounded-full">자유게시판</span>
-                {% elif post.category == 'tip' %}
-                <span class="text-xs font-bold px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full">꿀팁공유</span>
+        </div>
+        <!-- 글쓰기 버튼 -->
+        {% if current_board %}
+        <a href="{% url 'boards:post_create' current_board.id %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow transition transform hover:-translate-y-0.5 text-sm flex items-center">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            새 글 쓰기
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- 인기글 섹션 (상위 3개) -->
+    {% if popular_posts %}
+    <div class="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100 mb-6">
+        <h3 class="text-sm font-bold text-indigo-800 mb-3 flex items-center">
+            <span class="mr-2">🔥</span> 주간 인기글
+        </h3>
+        <ul class="space-y-2">
+            {% for p in popular_posts %}
+            <li>
+                <a href="{% url 'boards:post_detail' p.id %}" class="flex items-center justify-between group">
+                    <div class="flex items-center truncate">
+                        <span class="text-xs font-bold text-indigo-600 bg-white px-2 py-0.5 rounded border border-indigo-200 mr-2 flex-shrink-0">인기</span>
+                        <span class="text-sm text-gray-800 group-hover:text-indigo-600 font-medium truncate">{{ p.title }}</span>
+                        {% if p.comments.count > 0 %}
+                            <span class="text-xs text-indigo-500 font-bold ml-1.5">[{{ p.comments.count }}]</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center text-xs text-gray-400 flex-shrink-0 ml-4 gap-3">
+                        <span>{{ p.author.display_name }}</span>
+                        <span class="flex items-center"><svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>{{ p.views }}</span>
+                        <span class="flex items-center text-red-500"><svg class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>{{ p.likes_count }}</span>
+                    </div>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- 게시물 목록 -->
+    {% if not current_board or current_board.list_style == 'table' %}
+    <!-- 스타일 2: 테이블형 (디폴트) -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-16">번호</th>
+                        {% if not current_board %}
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-24">분류</th>
+                        {% endif %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">제목</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-28">글쓴이</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-24">날짜</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-16">조회</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-16">추천</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    {% for post in posts %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3 text-center text-sm text-gray-400">{{ post.id }}</td>
+                        {% if not current_board %}
+                        <td class="px-4 py-3 text-center text-sm">
+                            <span class="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded">{{ post.board.name }}</span>
+                        </td>
+                        {% endif %}
+                        <td class="px-4 py-3 text-sm">
+                            <a href="{% url 'boards:post_detail' post.id %}" class="text-gray-800 hover:text-indigo-600 font-medium truncate block max-w-lg transition-colors">
+                                {{ post.title }}
+                                {% if post.comments.count > 0 %}
+                                    <span class="text-xs text-indigo-600 font-bold ml-1">[{{ post.comments.count }}]</span>
+                                {% endif %}
+                                {% if post.media_files.exists %}
+                                    <svg class="w-3.5 h-3.5 inline text-gray-400 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                {% endif %}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-center text-sm text-gray-600 truncate max-w-[100px]">
+                            {% if current_board.is_anonymous and post.author != request.user %}
+                                익명
+                            {% else %}
+                                {{ post.author.display_name }}
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-center text-xs text-gray-400">{{ post.created_at|date:"m.d H:i" }}</td>
+                        <td class="px-4 py-3 text-center text-xs text-gray-400">{{ post.views }}</td>
+                        <td class="px-4 py-3 text-center text-xs {% if post.likes_count > 0 %}text-red-500 font-bold{% else %}text-gray-400{% endif %}">{{ post.likes_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center text-gray-500">등록된 게시물이 없습니다.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% elif current_board.list_style == 'webzine' %}
+    <!-- 스타일 1: 웹진형 (썸네일 리스트) -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden divide-y divide-gray-100">
+        {% for post in posts %}
+        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+            <!-- 추천수 좌측 (데스크탑에서만 크게 표시) -->
+            <div class="hidden sm:flex flex-col items-center justify-center w-16 flex-shrink-0">
+                <span class="text-2xl font-black {% if post.likes_count > 0 %}text-red-500{% else %}text-gray-300{% endif %}">{{ post.likes_count }}</span>
+                <span class="text-[10px] text-gray-400 font-bold uppercase mt-1">추천</span>
+            </div>
+            
+            <!-- 썸네일 영역 -->
+            <div class="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-lg overflow-hidden ml-0 sm:ml-2 mr-4 border border-gray-200">
+                {% if post.media_files.exists %}
+                    <!-- 첫번째 첨부파일 썸네일 (단순 구현) -->
+                    <img src="{{ post.media_files.first.file.url }}" alt="Thumbnail" class="w-full h-full object-cover">
                 {% else %}
-                <span class="text-xs font-bold px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full">질문</span>
+                    <div class="w-full h-full flex items-center justify-center text-gray-300">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
                 {% endif %}
             </div>
             
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ post.title }}</h3>
-            
-            <div class="text-gray-600 leading-relaxed mb-6">
-                {{ post.content|linebreaks }}
-            </div>
-            
-            {% if post.image %}
-            <div class="mb-6">
-                <img src="{{ post.image.url }}" alt="첨부 이미지" class="max-h-96 rounded-2xl border border-gray-200">
-            </div>
-            {% endif %}
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end border-t border-gray-50 pt-4 gap-4">
-                <div class="text-sm font-medium text-gray-400">
-                    작성자 <span class="text-gray-600">{{ post.author.display_name }}</span> <span class="mx-2">•</span> {{ post.created_at|date:"Y.m.d H:i" }}
+            <!-- 컨텐츠 영역 -->
+            <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
+                <div>
+                    <a href="{% url 'boards:post_detail' post.id %}" class="text-base sm:text-lg font-bold text-gray-900 hover:text-indigo-600 block truncate transition-colors">
+                        {{ post.title }}
+                        {% if post.comments.count > 0 %}
+                            <span class="text-sm font-bold text-indigo-500 ml-1">[{{ post.comments.count }}]</span>
+                        {% endif %}
+                    </a>
+                    <p class="text-sm text-gray-500 mt-1 truncate hidden sm:block">{{ post.content|striptags|truncatechars:60 }}</p>
                 </div>
                 
-                <div class="flex space-x-3 w-full sm:w-auto overflow-x-auto">
-                    <!-- 댓글 아코디언 토글 버튼 -->
-                    <button onclick="toggleComments({{ post.id }})" class="flex-shrink-0 flex items-center bg-gray-50 px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100 transition font-bold text-sm focus:outline-none">
-                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                        댓글 {{ post.comments.count }}
-                    </button>
-
-                    <!-- 비동기 게시글 좋아요/싫어요 반응 -->
-                    <div class="flex-shrink-0 flex space-x-3 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
-                        <button onclick="toggleReaction({{ post.id }}, 'like')" class="flex items-center text-gray-500 hover:text-blue-600 transition group focus:outline-none">
-                            <span class="mr-1.5 transform group-hover:scale-125 transition duration-200">👍</span> 
-                            <span id="like-count-{{ post.id }}" class="font-bold w-4 text-center group-hover:text-blue-600">{{ post.likes_count }}</span>
-                        </button>
-                        <div class="w-px h-5 bg-gray-200 mt-0.5"></div>
-                        <button onclick="toggleReaction({{ post.id }}, 'dislike')" class="flex items-center text-gray-500 hover:text-red-500 transition group focus:outline-none">
-                            <span class="mr-1.5 transform group-hover:scale-125 transition duration-200 grayscale group-hover:grayscale-0">👎</span> 
-                            <span id="dislike-count-{{ post.id }}" class="font-bold w-4 text-center group-hover:text-red-500">{{ post.dislikes_count }}</span>
-                        </button>
-                    </div>
+                <div class="flex items-center text-xs text-gray-400 mt-3 gap-3">
+                    <span class="font-bold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{{ current_board.name }}</span>
+                    <span>
+                        {% if current_board.is_anonymous and post.author != request.user %}익명{% else %}{{ post.author.display_name }}{% endif %}
+                    </span>
+                    <span class="flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>{{ post.created_at|date:"m.d H:i" }}</span>
+                    <span class="flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>{{ post.views }}</span>
                 </div>
-            </div>
-
-            <!-- 댓글 아코디언 영역 (기본 숨김) -->
-            <div id="comments-section-{{ post.id }}" class="hidden mt-4 pt-4 border-t border-gray-100">
-                <!-- 댓글 리스트 -->
-                <div class="space-y-4 mb-4">
-                    {% for comment in post.comments.all %}
-                    <div class="bg-gray-50 rounded-2xl p-4 flex flex-col space-y-2">
-                        <div class="flex justify-between items-start">
-                            <span class="text-sm font-bold text-gray-800">{{ comment.author.display_name }}</span>
-                            <span class="text-xs font-medium text-gray-400">{{ comment.created_at|date:"m.d H:i" }}</span>
-                        </div>
-                        <p class="text-gray-700 text-sm leading-relaxed">{{ comment.content|linebreaksbr }}</p>
-                        
-                        <!-- 댓글 좋아요/싫어요 -->
-                        <div class="flex justify-end space-x-3 mt-1">
-                            <button onclick="toggleCommentReaction({{ comment.id }}, 'like')" class="flex items-center text-xs text-gray-400 hover:text-blue-600 transition group focus:outline-none">
-                                <span class="mr-1">👍</span>
-                                <span id="comment-like-{{ comment.id }}" class="font-bold">{{ comment.likes_count }}</span>
-                            </button>
-                            <button onclick="toggleCommentReaction({{ comment.id }}, 'dislike')" class="flex items-center text-xs text-gray-400 hover:text-red-500 transition group focus:outline-none">
-                                <span class="mr-1">👎</span>
-                                <span id="comment-dislike-{{ comment.id }}" class="font-bold">{{ comment.dislikes_count }}</span>
-                            </button>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <!-- 신규 댓글 작성 폼 -->
-                <form method="post" action="{% url 'boards:comment_create' post.id %}" class="flex gap-2">
-                    {% csrf_token %}
-                    <input type="text" name="content" required placeholder="댓글을 입력하세요..." class="flex-1 bg-gray-50 border border-gray-200 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl transition shadow-sm text-sm whitespace-nowrap">등록</button>
-                </form>
             </div>
         </div>
         {% empty %}
-        <div class="text-center font-medium text-gray-400 py-16 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-            작성된 게시글이 없습니다. 첫 글의 주인공이 되어보세요!
-        </div>
+        <div class="p-12 text-center text-gray-500">등록된 게시물이 없습니다.</div>
         {% endfor %}
     </div>
+    {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    // CSRF 토큰을 가져오는 함수 (Django 기본 방식)
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    const csrftoken = getCookie('csrftoken');
-
-    // Fetch API를 활용한 비동기 좋아요/싫어요 실시간 업데이트 (게시글용)
-    function toggleReaction(postId, actionType) {
-        fetch(`/boards/${postId}/react/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({ action: actionType })
-        })
-        .then(response => {
-            if (!response.ok) {
-                if(response.status === 403) alert("로그인이 필요한 서비스입니다.");
-                throw new Error("Network response was not ok");
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById(`like-count-${postId}`).innerText = data.likes_count;
-            document.getElementById(`dislike-count-${postId}`).innerText = data.dislikes_count;
-        })
-        .catch(console.error);
-    }
-
-    // 비동기 좋아요/싫어요 실시간 업데이트 (댓글용)
-    function toggleCommentReaction(commentId, actionType) {
-        fetch(`/boards/comment/${commentId}/react/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({ action: actionType })
-        })
-        .then(response => {
-            if (!response.ok) {
-                if(response.status === 403) alert("로그인이 필요한 서비스입니다.");
-                throw new Error("Network response was not ok");
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById(`comment-like-${commentId}`).innerText = data.likes_count;
-            document.getElementById(`comment-dislike-${commentId}`).innerText = data.dislikes_count;
-        })
-        .catch(console.error);
-    }
-
-    // 댓글창 열고 닫기 (토글)
-    function toggleComments(postId) {
-        const section = document.getElementById(`comments-section-${postId}`);
-        if(section.classList.contains('hidden')) {
-            section.classList.remove('hidden');
-        } else {
-            section.classList.add('hidden');
-        }
-    }
-
-    // 페이지 로드 시 URL 파라미터를 읽어 특정 아코디언을 즉시 열어줍니다.
-    document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const openCommentsId = urlParams.get('open_comments');
-        if (openCommentsId) {
-            const section = document.getElementById(`comments-section-${openCommentsId}`);
-            if (section) {
-                section.classList.remove('hidden');
-                // 아코디언이 열린 채로 URL을 깔끔하게 원복(제거)합니다.
-                urlParams.delete('open_comments');
-                const newRelativePathQuery = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '') + window.location.hash;
-                history.replaceState(null, '', newRelativePathQuery);
-            }
-        }
-    });
-</script>
 {% endblock %}

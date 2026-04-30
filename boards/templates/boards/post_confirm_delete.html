@@ -18,7 +18,7 @@
         <form method="post">
             {% csrf_token %}
             <div class="flex gap-3 justify-center">
-                <a href="{% if is_memo %}{% url 'boards:memo_list' %}{% else %}{% url 'boards:post_list' %}{% endif %}" 
+                <a href="{% if is_memo %}{% url 'boards:memo_list' %}{% else %}{% if object.board %}{% url 'boards:post_list' object.board.id %}{% else %}{% url 'boards:post_list_all' %}{% endif %}{% endif %}" 
                    class="w-1/2 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 px-4 rounded-xl transition text-sm">
                     취소
                 </a>

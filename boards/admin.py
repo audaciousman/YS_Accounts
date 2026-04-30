@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Post, Comment, Reaction
+from simple_history.admin import SimpleHistoryAdmin
+from .models import Board, Post, Comment, Reaction
+
+@admin.register(Board)
+class BoardAdmin(SimpleHistoryAdmin):
+    list_display = ('name', 'description', 'is_anonymous', 'created_at')
+    list_filter = ('is_anonymous',)
+    search_fields = ('name', 'description')
+    filter_horizontal = ('allowed_groups', 'allowed_users', 'board_admins')
 
 # 댓글 관리를 더 직관적으로 하기 위한 Inline 모델
 class CommentInline(admin.TabularInline):
@@ -10,10 +18,10 @@ class CommentInline(admin.TabularInline):
     extra = 1
 
 @admin.register(Post)
-class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'author', 'likes', 'dislikes', 'created_at')
-    # 카테고리별(자유, 꿀팁, 질문), 작성자별 필터 기능 활성화
-    list_filter = ('category', 'author')
+class PostAdmin(SimpleHistoryAdmin):
+    list_display = ('title', 'board', 'household', 'author', 'likes', 'dislikes', 'created_at')
+    # 게시판별, 가계부별, 작성자별 필터 기능 활성화
+    list_filter = ('board', 'household', 'author')
     search_fields = ('title', 'content')
     inlines = [CommentInline]  # 게시글 수정 창에서 댓글(Comment)도 함께 관리
 

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from simple_history.models import HistoricalRecords
 
 class Household(models.Model):
     """
@@ -16,9 +17,40 @@ class Household(models.Model):
     admin_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='managed_households')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='households', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = '가계부 (Household)'
+        verbose_name_plural = '가계부 목록 (Households)'
 
     def __str__(self):
         return f"{self.name} ({self.get_household_type_display()})"
+
+
+class GroupRequest(models.Model):
+    """
+    일반 사용자가 그룹 가계부 생성을 관리자에게 요청하는 모델
+    """
+    STATUS_CHOICES = (
+        ('pending', '대기 중'),
+        ('approved', '승인됨'),
+        ('rejected', '거절됨'),
+    )
+    requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='group_requests', verbose_name="요청자")
+    requested_members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='group_invites', blank=True, verbose_name="포함할 멤버", help_text="이 그룹에 포함할 멤버들을 선택하세요.")
+    name = models.CharField(max_length=100, unique=True, verbose_name="그룹 이름", help_text="중복되지 않는 고유한 그룹 이름을 입력하세요.")
+    description = models.TextField(verbose_name="설명(Memo)", help_text="이 그룹의 목적이나 설명을 자유롭게 작성해주세요.")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="상태")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="요청 일시")
+
+    class Meta:
+        verbose_name = '그룹 생성 요청 (Group Request)'
+        verbose_name_plural = '그룹 생성 요청 목록 (Group Requests)'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.get_status_display()}] {self.name} - by {self.requester}"
 
 
 class Category(models.Model):
@@ -63,6 +95,10 @@ class Category(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        verbose_name = '분류 (Category)'
+        verbose_name_plural = '분류 목록 (Categories)'
+
     def __str__(self):
         prefix = "[고정]" if self.is_fixed else "[변동]"
         return f"{self.get_type_display()} - {prefix} {self.name}" if self.type == 'expense' else f"{self.get_type_display()} - {self.name}"
@@ -82,10 +118,16 @@ class Asset(models.Model):
 
     household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name='assets')
     name = models.CharField(max_length=50, help_text="예: 농협 월급통장, 신한카드, 청약통장")
+    bank_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="은행/카드사명", help_text="예: 농협, 신한카드")
+    account_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="계좌번호/카드번호")
     asset_type = models.CharField(max_length=20, choices=ASSET_TYPE_CHOICES, default='bank', verbose_name="자산 유형")
     initial_balance = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="초기 잔액")
     is_active = models.BooleanField(default=True, verbose_name="사용 여부")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '자산 (Asset)'
+        verbose_name_plural = '자산 목록 (Assets)'
 
     def __str__(self):
         return f"[{self.get_asset_type_display()}] {self.name}"
@@ -127,12 +169,16 @@ class Transaction(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = '거래 내역 (Transaction)'
+        verbose_name_plural = '거래 내역 목록 (Transactions)'
+        ordering = ['-date', '-created_at']
 
     def __str__(self):
         cat_name = self.category.name if self.category else '미분류'
         w_asset = self.withdraw_asset.name if self.withdraw_asset else '-'
         d_asset = self.deposit_asset.name if self.deposit_asset else '-'
         return f"[{self.get_transaction_type_display()}|{cat_name}|{w_asset}->{d_asset}] {self.date} - {self.description} : {self.amount}원"
-
-    class Meta:
-        ordering = ['-date', '-created_at']

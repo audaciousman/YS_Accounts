@@ -1,9 +1,10 @@
 from django.urls import path
 from .views import (
-    LedgerDashboardView, TransactionCreateView, TransactionSoftDeleteView, HouseholdSwitchView,
+    LedgerDashboardView, TransactionCreateView, TransactionUpdateView, TransactionSoftDeleteView, HouseholdSwitchView,
     LedgerSettingsView,
     CategoryCreateView, CategoryUpdateView, CategoryDeleteView,
-    AssetCreateView, AssetDeleteView, LedgerStatsView
+    AssetCreateView, AssetDeleteView, LedgerStatsView, GroupRequestCreateView, FixedTransactionQuickAddView,
+    TransactionBatchCreateView, download_batch_template
 )
 
 app_name = 'ledgers'
@@ -12,8 +13,13 @@ urlpatterns = [
     # 가계부 메인 대시보드
     path('', LedgerDashboardView.as_view(), name='dashboard'),
     path('household/switch/<int:pk>/', HouseholdSwitchView.as_view(), name='household_switch'),
+    path('group/request/', GroupRequestCreateView.as_view(), name='group_request'),
     path('stats/', LedgerStatsView.as_view(), name='stats'),
     path('create/', TransactionCreateView.as_view(), name='transaction_create'),
+    path('batch-add/', TransactionBatchCreateView.as_view(), name='transaction_batch_add'),
+    path('batch-template/', download_batch_template, name='download_batch_template'),
+    path('quick-add/', FixedTransactionQuickAddView.as_view(), name='quick_add'),
+    path('<int:pk>/edit/', TransactionUpdateView.as_view(), name='transaction_update'),
     path('<int:pk>/delete/', TransactionSoftDeleteView.as_view(), name='transaction_delete'),
 
     # 가계부 환경설정

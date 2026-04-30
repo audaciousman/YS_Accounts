@@ -33,7 +33,7 @@
         </div>
         {% endif %}
 
-        <form method="post" class="space-y-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
             
             {% for field in form %}
@@ -70,7 +70,7 @@
 </div>
 
 <style>
-    .custom-form-input input {
+    .custom-form-input input, .custom-form-input textarea {
         width: 100%;
         padding: 0.875rem 1rem;
         border-radius: 0.75rem;
@@ -82,10 +82,52 @@
         outline: none;
         transition: all 0.2s;
     }
-    .custom-form-input input:focus {
+    .custom-form-input input:focus, .custom-form-input textarea:focus {
         border-color: #3b82f6;
         background-color: #ffffff;
         box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"]');
+        
+        if (fileInput) {
+            // 전역 클립보드 붙여넣기 (Ctrl+V) 이벤트
+            document.addEventListener('paste', function(e) {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                let filePasted = false;
+                
+                const dataTransfer = new DataTransfer();
+                
+                for (let index in items) {
+                    const item = items[index];
+                    if (item.kind === 'file') {
+                        const blob = item.getAsFile();
+                        const file = new File([blob], `pasted-profile-${Date.now()}.png`, { type: blob.type });
+                        dataTransfer.items.add(file);
+                        filePasted = true;
+                        break; // 프로필 이미지는 단일 파일
+                    }
+                }
+                
+                if (filePasted) {
+                    e.preventDefault();
+                    fileInput.files = dataTransfer.files;
+                    
+                    // 시각적 피드백 제공 (가장 가까운 라벨 텍스트 변경 시도)
+                    const labelElement = document.querySelector(`label[for="${fileInput.id}"]`);
+                    if (labelElement) {
+                        const originalText = labelElement.innerHTML;
+                        labelElement.innerHTML = `<span class="text-green-600">✅ 클립보드 이미지 추가됨</span>`;
+                        setTimeout(() => {
+                            labelElement.innerHTML = originalText;
+                        }, 2000);
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
