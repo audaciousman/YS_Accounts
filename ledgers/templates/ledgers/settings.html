@@ -201,7 +201,7 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <span class="text-lg">
-                                    {% if asset.asset_type == 'cash' %}💵{% elif asset.asset_type == 'bank' %}🏦{% elif asset.asset_type == 'savings' %}🍀{% else %}💳{% endif %}
+                                    {% if asset.asset_type == 'cash' %}💵{% elif asset.asset_type == 'bank' %}🏦{% elif asset.asset_type == 'savings' %}🍀{% elif asset.asset_type == 'card' %}💳{% elif asset.asset_type == 'pay' %}📱{% elif asset.asset_type == 'investment' %}📈{% elif asset.asset_type == 'loan' %}📉{% elif asset.asset_type == 'insurance' %}🛡️{% else %}💰{% endif %}
                                 </span>
                                 <span class="font-bold text-gray-800">{{ asset.name }}</span>
                             </div>

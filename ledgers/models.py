@@ -114,6 +114,10 @@ class Asset(models.Model):
         ('bank', '입출금 통장'),
         ('savings', '저축/적금'),
         ('card', '신용/체크카드'),
+        ('pay', '포인트/페이'),
+        ('investment', '투자/주식/코인'),
+        ('loan', '대출/부채'),
+        ('insurance', '보험'),
     )
 
     household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name='assets')
