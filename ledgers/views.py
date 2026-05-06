@@ -754,3 +754,147 @@ class TransactionBatchCreateView(LoginRequiredMixin, View):
             
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'오류가 발생했습니다: {str(e)}'})
+
+def download_asset_batch_template(request):
+    """
+    자산 일괄 추가용 CSV 템플릿 다운로드
+    """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="asset_batch_template.csv"'
+    response.write('\ufeff'.encode('utf8'))
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        '자산명(예: 농협통장)', 
+        '은행/카드사(예: 농협)', 
+        '계좌/카드번호', 
+        '자산유형(현금/입출금 통장/저축/신용카드/포인트/투자/대출/보험)', 
+        '초기잔액(숫자만)', 
+        '메모'
+    ])
+    writer.writerow(['생활비 통장', '신한은행', '110-123-456789', '입출금 통장', '500000', '생활비 전용'])
+    writer.writerow(['메인 카드', '현대카드', '1234-5678-XXXX-XXXX', '신용카드', '0', ''])
+    
+    return response
+
+class AssetBatchCreateView(LoginRequiredMixin, View):
+    """
+    자산 일괄 추가 화면 및 JSON 처리 API
+    """
+    def get(self, request, *args, **kwargs):
+        household = get_active_household(request)
+        if not household:
+            messages.error(request, '활성화된 가계부가 없습니다.')
+            return redirect('ledgers:dashboard')
+            
+        context = {
+            'active_household': household,
+        }
+        return render(request, 'ledgers/asset_batch_form.html', context)
+        
+    def post(self, request, *args, **kwargs):
+        household = get_active_household(request)
+        if not household:
+            return JsonResponse({'success': False, 'message': '활성화된 가계부가 없습니다.'})
+            
+        try:
+            data = json.loads(request.body)
+            assets_data = data.get('assets', [])
+            
+            created_count = 0
+            for row in assets_data:
+                name = row.get('name')
+                bank_name = row.get('bank_name', '')
+                account_number = row.get('account_number', '')
+                asset_type = row.get('asset_type', 'bank')
+                initial_balance = int(row.get('initial_balance', 0) or 0)
+                memo = row.get('memo', '')
+                
+                if not name:
+                    continue
+                
+                Asset.objects.create(
+                    household=household,
+                    name=name,
+                    bank_name=bank_name,
+                    account_number=account_number,
+                    asset_type=asset_type,
+                    initial_balance=initial_balance,
+                    memo=memo
+                )
+                created_count += 1
+                
+            messages.success(request, f'성공적으로 {created_count}건의 자산을 일괄 등록했습니다.')
+            return JsonResponse({'success': True, 'redirect_url': reverse('ledgers:settings')})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'오류가 발생했습니다: {str(e)}'})
+
+def download_category_batch_template(request):
+    """
+    분류 일괄 추가용 CSV 템플릿 다운로드
+    """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="category_batch_template.csv"'
+    response.write('\ufeff'.encode('utf8'))
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        '유형(수입/지출)', 
+        '분류명(예: 식비)', 
+        '고정비여부(O/X)'
+    ])
+    writer.writerow(['지출', '식비', 'X'])
+    writer.writerow(['지출', '통신비', 'O'])
+    writer.writerow(['수입', '월급', 'O'])
+    
+    return response
+
+class CategoryBatchCreateView(LoginRequiredMixin, View):
+    """
+    분류 일괄 추가 화면 및 JSON 처리 API
+    """
+    def get(self, request, *args, **kwargs):
+        household = get_active_household(request)
+        if not household:
+            messages.error(request, '활성화된 가계부가 없습니다.')
+            return redirect('ledgers:dashboard')
+            
+        context = {
+            'active_household': household,
+        }
+        return render(request, 'ledgers/category_batch_form.html', context)
+        
+    def post(self, request, *args, **kwargs):
+        household = get_active_household(request)
+        if not household:
+            return JsonResponse({'success': False, 'message': '활성화된 가계부가 없습니다.'})
+            
+        try:
+            data = json.loads(request.body)
+            categories_data = data.get('categories', [])
+            
+            created_count = 0
+            for row in categories_data:
+                type_val = row.get('type')
+                name = row.get('name')
+                is_fixed_raw = row.get('is_fixed', 'X')
+                is_fixed = True if str(is_fixed_raw).strip().upper() == 'O' else False
+                
+                if not name or type_val not in ['income', 'expense']:
+                    continue
+                
+                Category.objects.create(
+                    household=household,
+                    type=type_val,
+                    name=name,
+                    is_fixed=is_fixed
+                )
+                created_count += 1
+                
+            messages.success(request, f'성공적으로 {created_count}건의 분류를 일괄 등록했습니다.')
+            return JsonResponse({'success': True, 'redirect_url': reverse('ledgers:settings')})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'오류가 발생했습니다: {str(e)}'})
+

@@ -4,7 +4,9 @@ from .views import (
     LedgerSettingsView,
     CategoryCreateView, CategoryUpdateView, CategoryDeleteView,
     AssetCreateView, AssetUpdateView, AssetDeleteView, LedgerStatsView, GroupRequestCreateView, FixedTransactionQuickAddView,
-    TransactionBatchCreateView, download_batch_template
+    TransactionBatchCreateView, download_batch_template,
+    AssetBatchCreateView, download_asset_batch_template,
+    CategoryBatchCreateView, download_category_batch_template
 )
 
 app_name = 'ledgers'
@@ -27,7 +29,12 @@ urlpatterns = [
     path('settings/category/add/', CategoryCreateView.as_view(), name='category_create'),
     path('settings/category/<int:pk>/edit/', CategoryUpdateView.as_view(), name='category_update'),
     path('settings/category/<int:pk>/delete/', CategoryDeleteView.as_view(), name='category_delete'),
+    path('settings/category/batch-add/', CategoryBatchCreateView.as_view(), name='category_batch_add'),
+    path('settings/category/batch-template/', download_category_batch_template, name='download_category_batch_template'),
+    
     path('settings/asset/add/', AssetCreateView.as_view(), name='asset_create'),
     path('settings/asset/<int:pk>/edit/', AssetUpdateView.as_view(), name='asset_update'),
     path('settings/asset/<int:pk>/delete/', AssetDeleteView.as_view(), name='asset_delete'),
+    path('settings/asset/batch-add/', AssetBatchCreateView.as_view(), name='asset_batch_add'),
+    path('settings/asset/batch-template/', download_asset_batch_template, name='download_asset_batch_template'),
 ]

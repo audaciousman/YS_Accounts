@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}자산 일괄 추가 | YS Accounts{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    <!-- 헤더 영역 -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+                <svg class="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                자산(통장/카드) 일괄 추가
+            </h1>
+            <p class="text-gray-500 mt-1 text-sm">여러 개의 자산을 한 번에 입력하거나 엑셀(CSV) 파일을 업로드하세요.</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-2">
+            <a href="{% url 'ledgers:download_asset_batch_template' %}" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-bold py-2 px-4 rounded-xl shadow-sm text-sm transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                엑셀 양식 다운로드
+            </a>
+            
+            <label class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold py-2 px-4 rounded-xl shadow-sm text-sm transition-colors flex items-center gap-2 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                엑셀(CSV) 업로드
+                <input type="file" id="csv-upload" accept=".csv" class="hidden">
+            </label>
+        </div>
+    </div>
+
+    <!-- 일괄 입력 테이블 영역 -->
+    <div class="bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="batch-table">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[150px] w-48">자산명 <span class="text-red-500">*</span></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[130px] w-40">은행/카드사</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[180px] w-48">계좌/카드번호</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[140px] w-40">자산 유형 <span class="text-red-500">*</span></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[120px] w-36">초기 잔액</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[200px]">메모</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-black text-gray-500 uppercase tracking-wider w-12"></th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100" id="batch-tbody">
+                    <!-- Javascript로 동적 렌더링 됩니다 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="bg-gray-50 px-4 py-3 border-t border-gray-100 flex justify-center">
+            <button type="button" onclick="addRow()" class="text-sm font-bold text-gray-600 hover:text-indigo-600 flex items-center gap-1 px-4 py-2 rounded-lg hover:bg-indigo-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                새로운 줄 추가하기
+            </button>
+        </div>
+    </div>
+    
+    <!-- 저장 버튼 영역 -->
+    <div class="flex justify-end gap-3">
+        <a href="{% url 'ledgers:settings' %}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-3 px-6 rounded-xl transition text-sm">취소</a>
+        <button type="button" onclick="submitBatch()" id="btn-submit" class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3 px-8 rounded-xl shadow-md transition active:scale-95 text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            일괄 등록하기 (<span id="row-count-display">0</span>건)
+        </button>
+    </div>
+
+</div>
+
+<!-- PapaParse CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+// CSRF Token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+// 매핑용 헬퍼 함수
+const typeMap = {
+    '현금': 'cash', 
+    '입출금 통장': 'bank', '통장': 'bank', 
+    '저축/적금': 'savings', '저축': 'savings', '적금': 'savings',
+    '신용/체크카드': 'card', '신용카드': 'card', '체크카드': 'card', '카드': 'card',
+    '포인트/페이': 'pay', '포인트': 'pay', '페이': 'pay',
+    '투자/주식/코인': 'investment', '투자': 'investment', '주식': 'investment', '코인': 'investment',
+    '대출/부채': 'loan', '대출': 'loan', '부채': 'loan',
+    '보험': 'insurance'
+};
+
+// 템플릿 렌더링 함수
+function createRowHtml(index, data = {}) {
+    const name = data.name || '';
+    const bank_name = data.bank_name || '';
+    const account_number = data.account_number || '';
+    const asset_type = data.asset_type || 'bank';
+    const initial_balance = data.initial_balance || '';
+    const memo = data.memo || '';
+
+    return `
+        <tr class="batch-row" data-index="${index}">
+            <td class="px-4 py-2">
+                <input type="text" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-name" placeholder="예: 생활비 통장" value="${name}" required>
+            </td>
+            <td class="px-4 py-2">
+                <input type="text" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-bank" placeholder="예: 농협" value="${bank_name}">
+            </td>
+            <td class="px-4 py-2">
+                <input type="text" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-account" placeholder="예: 110-123-..." value="${account_number}">
+            </td>
+            <td class="px-4 py-2">
+                <select class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-type">
+                    <option value="cash" ${asset_type==='cash'?'selected':''}>현금</option>
+                    <option value="bank" ${asset_type==='bank'?'selected':''}>입출금 통장</option>
+                    <option value="savings" ${asset_type==='savings'?'selected':''}>저축/적금</option>
+                    <option value="card" ${asset_type==='card'?'selected':''}>신용/체크카드</option>
+                    <option value="pay" ${asset_type==='pay'?'selected':''}>포인트/페이</option>
+                    <option value="investment" ${asset_type==='investment'?'selected':''}>투자/주식/코인</option>
+                    <option value="loan" ${asset_type==='loan'?'selected':''}>대출/부채</option>
+                    <option value="insurance" ${asset_type==='insurance'?'selected':''}>보험</option>
+                </select>
+                ${data.raw_type && asset_type === 'bank' && data.raw_type !== '입출금 통장' && data.raw_type !== '통장' ? `<p class="text-[10px] text-red-500 mt-0.5 truncate">매칭 실패: ${data.raw_type}</p>` : ''}
+            </td>
+            <td class="px-4 py-2">
+                <input type="number" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-balance" placeholder="0" value="${initial_balance}">
+            </td>
+            <td class="px-4 py-2">
+                <input type="text" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-memo" placeholder="메모" value="${memo}">
+            </td>
+            <td class="px-4 py-2 text-center">
+                <button type="button" onclick="removeRow(this)" class="text-gray-400 hover:text-red-500 transition-colors p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 행 추가/삭제
+let rowCount = 0;
+function addRow(data = {}) {
+    const tbody = document.getElementById('batch-tbody');
+    tbody.insertAdjacentHTML('beforeend', createRowHtml(rowCount++, data));
+    updateCountDisplay();
+}
+
+function removeRow(btn) {
+    btn.closest('tr').remove();
+    updateCountDisplay();
+}
+
+function updateCountDisplay() {
+    const count = document.querySelectorAll('.batch-row').length;
+    document.getElementById('row-count-display').textContent = count;
+}
+
+// 초기 로딩 시 5개 행 추가
+document.addEventListener('DOMContentLoaded', () => {
+    for(let i=0; i<5; i++) addRow();
+});
+
+// 엑셀 업로드 처리 (PapaParse)
+document.getElementById('csv-upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const data = results.data;
+            if (data.length === 0) return;
+
+            // 기존 빈 행 삭제
+            document.getElementById('batch-tbody').innerHTML = '';
+            rowCount = 0;
+
+            data.forEach(row => {
+                // 키워드 기반 컬럼 찾기
+                const keys = Object.keys(row);
+                
+                let nameKey = keys.find(k => k.includes('자산명') || k.includes('이름'));
+                let bankKey = keys.find(k => k.includes('은행') || k.includes('카드사'));
+                let accountKey = keys.find(k => k.includes('계좌') || k.includes('카드번호'));
+                let typeKey = keys.find(k => k.includes('유형'));
+                let balanceKey = keys.find(k => k.includes('잔액'));
+                let memoKey = keys.find(k => k.includes('메모'));
+
+                if (!nameKey) return; // 자산명 없으면 무시
+
+                const rawType = typeKey ? row[typeKey].trim() : '';
+                let mappedType = 'bank'; // 기본값
+                
+                // 타입 매핑
+                for (const [key, val] of Object.entries(typeMap)) {
+                    if (rawType.includes(key)) {
+                        mappedType = val;
+                        break;
+                    }
+                }
+
+                const rawBalance = balanceKey ? row[balanceKey].toString().replace(/[^0-9-]/g, '') : '0';
+
+                addRow({
+                    name: row[nameKey],
+                    bank_name: bankKey ? row[bankKey] : '',
+                    account_number: accountKey ? row[accountKey] : '',
+                    asset_type: mappedType,
+                    raw_type: rawType,
+                    initial_balance: rawBalance,
+                    memo: memoKey ? row[memoKey] : ''
+                });
+            });
+
+            // 입력 필드 초기화 (같은 파일 다시 선택 가능하게)
+            e.target.value = '';
+        },
+        error: function(err) {
+            alert('CSV 파싱 오류: ' + err.message);
+        }
+    });
+});
+
+// 서버로 데이터 전송
+function submitBatch() {
+    const rows = document.querySelectorAll('.batch-row');
+    const assets = [];
+    let hasError = false;
+
+    rows.forEach(row => {
+        const nameInput = row.querySelector('.row-name');
+        
+        // 이름이 비어있는 행은 무시
+        if (!nameInput.value.trim()) return;
+        
+        assets.push({
+            name: nameInput.value.trim(),
+            bank_name: row.querySelector('.row-bank').value.trim(),
+            account_number: row.querySelector('.row-account').value.trim(),
+            asset_type: row.querySelector('.row-type').value,
+            initial_balance: row.querySelector('.row-balance').value.trim() || '0',
+            memo: row.querySelector('.row-memo').value.trim()
+        });
+    });
+
+    if (assets.length === 0) {
+        alert('등록할 자산이 없습니다.');
+        return;
+    }
+
+    const btnSubmit = document.getElementById('btn-submit');
+    const originalText = btnSubmit.innerHTML;
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 저장중...';
+
+    fetch("{% url 'ledgers:asset_batch_add' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ assets: assets })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect_url;
+        } else {
+            alert(data.message || '저장 중 오류가 발생했습니다.');
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        alert('서버 통신 중 오류가 발생했습니다.');
+        console.error('Error:', error);
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalText;
+    });
+}
+</script>
+{% endblock %}
