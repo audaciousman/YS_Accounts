@@ -18,6 +18,11 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'
 
+    def form_valid(self, form):
+        # 회원가입 성공 메시지 (로그인 페이지 등에서 출력됨)
+        messages.success(self.request, "회원가입이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.")
+        return super().form_valid(form)
+
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
     가입된 유저의 정보를 수정하는 뷰 (이름 변경 전용)

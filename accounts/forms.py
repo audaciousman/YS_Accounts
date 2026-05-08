@@ -28,6 +28,29 @@ class SignUpForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = CustomUser
         fields = ('email', 'last_name', 'first_name')
+        
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # 회원가입 시 기본으로 비활성화 (관리자 승인 대기)
+        user.is_active = False 
+        if commit:
+            user.save()
+        return user
+
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
+
+class CustomAuthenticationForm(AuthenticationForm):
+    """
+    비활성 계정에 대해 구체적인 에러 메시지를 제공하기 위한 커스텀 로그인 폼
+    """
+    def confirm_login_allowed(self, user):
+        if not user.is_active:
+            raise ValidationError(
+                "관리자 승인 대기 중이거나 비활성화된 계정입니다. 승인 후 다시 시도해주세요.",
+                code='inactive',
+            )
+        super().confirm_login_allowed(user)
 
 class UserProfileUpdateForm(forms.ModelForm):
     """

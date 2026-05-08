@@ -3,6 +3,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
+from django.contrib.auth import views as auth_views
+from accounts.forms import CustomAuthenticationForm
 
 def index_redirect(request):
     """
@@ -23,6 +25,8 @@ urlpatterns = [
     path('ledgers/', include('ledgers.urls')),
     # accounts의 커스텀 라우팅(회원가입 등)
     path('accounts/', include('accounts.urls')),
+    # 커스텀 로그인 폼 적용
+    path('accounts/login/', auth_views.LoginView.as_view(authentication_form=CustomAuthenticationForm), name='login'),
     # accounts의 기본 로그인/로그아웃 시스템을 활용하기 위해 include 추가 가능
     path('accounts/', include('django.contrib.auth.urls')),
 ]
