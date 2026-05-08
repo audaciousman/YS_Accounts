@@ -310,7 +310,12 @@
                     </td>
                     <td class="p-3 md:p-4 text-gray-800 text-xs md:text-sm group-hover:text-indigo-600 transition max-w-[120px] md:max-w-none">
                         <div class="flex items-center gap-2">
-                            <span class="truncate">{{ tx.description }}</span>
+                            <span class="truncate">
+                                {% if tx.merchant %}
+                                <span class="font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 mr-1 text-xs">[{{ tx.merchant }}]</span>
+                                {% endif %}
+                                {{ tx.description }}
+                            </span>
                             {% if tx.image %}
                             <button type="button" onclick="openImageModal('{{ tx.image.url }}')" class="flex-shrink-0" title="크게 보기">
                                 <img src="{{ tx.image.url }}" class="w-7 h-7 object-cover rounded shadow-sm hover:scale-110 transition-transform cursor-pointer border border-gray-200 bg-white" alt="첨부 이미지">

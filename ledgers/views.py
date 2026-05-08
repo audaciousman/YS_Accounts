@@ -675,12 +675,13 @@ def download_batch_template(request):
         '출금자산명', 
         '입금자산명', 
         '금액', 
+        '사용처(선택)',
         '내역(적요)'
     ])
     # 예시 데이터 제공
-    writer.writerow(['2026-04-10', '지출', '식비', '메인 카드', '', '15000', '점심 식사'])
-    writer.writerow(['2026-04-10', '수입', '급여', '', '급여통장', '3000000', '4월 급여'])
-    writer.writerow(['2026-04-11', '이체', '', '급여통장', '메인 카드', '500000', '카드대금 이체'])
+    writer.writerow(['2026-04-10', '지출', '식비', '메인 카드', '', '15000', '스타벅스', '점심 식사'])
+    writer.writerow(['2026-04-10', '수입', '급여', '', '급여통장', '3000000', '', '4월 급여'])
+    writer.writerow(['2026-04-11', '이체', '', '급여통장', '메인 카드', '500000', '', '카드대금 이체'])
     
     return response
 
@@ -723,6 +724,7 @@ class TransactionBatchCreateView(LoginRequiredMixin, View):
                 withdraw_id = row.get('withdraw_asset_id')
                 deposit_id = row.get('deposit_asset_id')
                 amount = int(row.get('amount', 0))
+                merchant = row.get('merchant', '')
                 description = row.get('description', '')
                 
                 # 빈 행 스킵
@@ -745,6 +747,7 @@ class TransactionBatchCreateView(LoginRequiredMixin, View):
                     withdraw_asset=withdraw,
                     deposit_asset=deposit,
                     amount=amount,
+                    merchant=merchant,
                     description=description
                 )
                 created_count += 1

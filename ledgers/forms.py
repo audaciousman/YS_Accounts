@@ -72,10 +72,12 @@ class TransactionForm(forms.ModelForm):
     """
     class Meta:
         model = Transaction
-        fields = ['date', 'transaction_type', 'category', 'withdraw_asset', 'deposit_asset', 'amount', 'description', 'image']
+        fields = ['date', 'transaction_type', 'category', 'withdraw_asset', 'deposit_asset', 'amount', 'merchant', 'description', 'image']
         
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
+            'merchant': forms.TextInput(attrs={'placeholder': '결제하신 곳이나 사용처를 적어주세요. (예: 쿠팡)'}),
+            'description': forms.TextInput(attrs={'placeholder': '상세 내역이나 메모를 적어주세요.'}),
             'image': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'capture': 'camera'

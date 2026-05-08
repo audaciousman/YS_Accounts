@@ -155,6 +155,7 @@ class Transaction(models.Model):
     
     amount = models.DecimalField(max_digits=12, decimal_places=0, help_text="거래 금액 (원)")
     date = models.DateField(help_text="거래 날짜")
+    merchant = models.CharField(max_length=100, blank=True, null=True, help_text="사용처 (선택)", verbose_name="사용처")
     description = models.CharField(max_length=255, help_text="내역 내용")
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES, default='expense')
     

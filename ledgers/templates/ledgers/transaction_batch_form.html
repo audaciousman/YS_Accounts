@@ -42,7 +42,8 @@
                         <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[140px] w-40">출금 자산</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[140px] w-40">입금 자산</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[120px] w-36">금액 <span class="text-red-500">*</span></th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[200px]">내역(적요) <span class="text-red-500">*</span></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[140px] w-40">사용처</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider min-w-[200px]">메모(상세내역) <span class="text-red-500">*</span></th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-black text-gray-500 uppercase tracking-wider w-12"></th>
                     </tr>
                 </thead>
@@ -113,6 +114,7 @@ function createRowHtml(index, data = {}) {
     const date = data.date || today;
     const type = data.type || 'expense';
     const amount = data.amount || '';
+    const merchant = data.merchant || '';
     const description = data.description || '';
     const category_id = data.category_id || '';
     const withdraw_id = data.withdraw_asset_id || '';
@@ -171,6 +173,9 @@ function createRowHtml(index, data = {}) {
             </td>
             <td class="px-4 py-2">
                 <input type="number" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-amount" placeholder="금액" value="${amount}" required>
+            </td>
+            <td class="px-4 py-2">
+                <input type="text" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-merchant" placeholder="사용처(선택)" value="${merchant}">
             </td>
             <td class="px-4 py-2">
                 <input type="text" class="w-full px-2 py-1.5 text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 row-desc" placeholder="내용 입력" value="${description}" required>
@@ -262,8 +267,8 @@ document.getElementById('csv-upload').addEventListener('change', function(e) {
             data.forEach(row => {
                 // 헤더 이름 매핑 (엄격하게 하지 않고 값으로 찾기)
                 const vals = Object.values(row);
-                // CSV 양식: 날짜, 유형, 분류명, 출금자산명, 입금자산명, 금액, 내역
-                if (vals.length < 7) return; 
+                // CSV 양식: 날짜, 유형, 분류명, 출금자산명, 입금자산명, 금액, 사용처, 메모(상세내역)
+                if (vals.length < 8) return; 
 
                 const rawDate = vals[0].trim();
                 const rawType = vals[1].trim();
@@ -271,7 +276,8 @@ document.getElementById('csv-upload').addEventListener('change', function(e) {
                 const rawWith = vals[3].trim();
                 const rawDep = vals[4].trim();
                 const rawAmt = vals[5].trim().replace(/,/g, '');
-                const rawDesc = vals[6].trim();
+                const rawMerchant = vals[6].trim();
+                const rawDesc = vals[7].trim();
 
                 // DB 매핑
                 const typeVal = typeMap[rawType] || 'expense';
@@ -285,6 +291,7 @@ document.getElementById('csv-upload').addEventListener('change', function(e) {
                     date: rawDate,
                     type: typeVal,
                     amount: rawAmt,
+                    merchant: rawMerchant,
                     description: rawDesc,
                     category_id: catObj ? catObj.id : '',
                     withdraw_asset_id: withObj ? withObj.id : '',
@@ -311,9 +318,11 @@ function submitBatch() {
     let hasError = false;
 
     rows.forEach(row => {
+        row.classList.remove('bg-red-50');
         const date = row.querySelector('.row-date').value;
         const type = row.querySelector('.row-type').value;
         const amount = row.querySelector('.row-amount').value;
+        const merchant = row.querySelector('.row-merchant').value;
         const desc = row.querySelector('.row-desc').value;
         
         // 데이터가 없으면 무시
@@ -352,6 +361,7 @@ function submitBatch() {
             date: date,
             type: type,
             amount: amount,
+            merchant: merchant,
             description: desc,
             category_id: catId,
             withdraw_asset_id: withId,

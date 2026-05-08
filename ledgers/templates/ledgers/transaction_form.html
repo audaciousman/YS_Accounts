@@ -107,10 +107,16 @@
                 <p id="amount-helper" class="text-right mt-2 font-black text-indigo-600 text-lg md:text-xl min-h-[1.75rem] transition-all"></p>
             </div>
 
+            <!-- 사용처 필드 (선택사항) -->
+            <div>
+                <label for="{{ form.merchant.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">사용처 <span class="text-xs text-gray-400 font-normal ml-1">(선택)</span></label>
+                <input type="text" name="{{ form.merchant.name }}" id="{{ form.merchant.id_for_label }}" value="{{ form.merchant.value|default_if_none:'' }}" class="w-full px-4 py-4 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition" placeholder="결제하신 곳이나 사용처를 적어주세요. (예: 쿠팡, 스타벅스)">
+            </div>
+
             <!-- 내용 필드 -->
             <div>
-                <label for="{{ form.description.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">사용 내용</label>
-                <input type="text" name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" value="{{ form.description.value|default_if_none:'' }}" required class="w-full px-4 py-4 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition" placeholder="어디서 사용하셨나요? (예: 점심 스타벅스 커피)">
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">상세 내역 (또는 메모)</label>
+                <input type="text" name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" value="{{ form.description.value|default_if_none:'' }}" required class="w-full px-4 py-4 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition" placeholder="상세 내역이나 메모를 적어주세요. (예: 생필품 구매, 친구들과 점심)">
             </div>
 
             <!-- 영수증 첨부 -->
