@@ -15,10 +15,22 @@ class CustomUserAdmin(SimpleHistoryAdmin, UserAdmin):
     form = CustomUserChangeForm
     
     model = CustomUser
-    list_display = ('email', 'first_name', 'last_name', 'is_staff', 'impersonate_link')
+    list_display = ('email', 'first_name', 'last_name', 'is_active', 'is_staff', 'impersonate_link')
     list_filter = ('is_staff', 'is_superuser', 'is_active')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
+
+    @admin.action(description='선택한 사용자의 계정을 활성화(승인)합니다.')
+    def make_active(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated}명의 사용자가 성공적으로 활성화(승인)되었습니다.')
+
+    @admin.action(description='선택한 사용자의 계정을 비활성화합니다.')
+    def make_inactive(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated}명의 사용자가 성공적으로 비활성화되었습니다.')
+
+    actions = [make_active, make_inactive]
 
     def impersonate_link(self, obj):
         url = reverse('accounts:impersonate', args=[obj.pk])
