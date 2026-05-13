@@ -24,10 +24,28 @@
             
             <label class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold py-2 px-4 rounded-xl shadow-sm text-sm transition-colors flex items-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                엑셀(CSV) 업로드
-                <input type="file" id="csv-upload" accept=".csv" class="hidden">
+                엑셀 업로드
+                <input type="file" id="csv-upload" accept=".csv, .xls, .xlsx" class="hidden">
             </label>
         </div>
+    </div>
+    
+    <!-- 엑셀 업로드 옵션 -->
+    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 md:p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4 shadow-sm">
+        <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-indigo-900">업로드 양식:</span>
+            <select id="upload-format" class="text-sm border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 py-1.5 px-3">
+                <option value="default">가계부 기본 양식 (.csv)</option>
+                <option value="hyundai">현대카드 내역 (.xls, .xlsx, .csv)</option>
+            </select>
+        </div>
+        <div id="hyundai-card-select" class="flex items-center gap-2 hidden">
+            <span class="text-sm font-bold text-indigo-900">결제 카드 자산:</span>
+            <select id="upload-asset" class="text-sm border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 py-1.5 px-3">
+                <option value="">선택 안함</option>
+            </select>
+        </div>
+        <p id="upload-hint" class="text-xs text-indigo-600 font-medium ml-auto hidden sm:block">현대카드 엑셀을 바로 올리시면 자동으로 맵핑됩니다.</p>
     </div>
 
     <!-- 일괄 입력 테이블 영역 -->
@@ -74,6 +92,8 @@
 
 <!-- PapaParse CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- SheetJS CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // 서버에서 전달받은 데이터
 const RAW_CATEGORIES = {{ categories_json|safe }};
@@ -239,17 +259,114 @@ function updateCountDisplay() {
     document.getElementById('row-count-display').textContent = count;
 }
 
-// 초기 로딩 시 5개 행 추가
+// 초기 로딩
 document.addEventListener('DOMContentLoaded', () => {
     for(let i=0; i<5; i++) addRow();
+    
+    // 현대카드 자산 드롭다운 초기화
+    const assetSelect = document.getElementById('upload-asset');
+    RAW_ASSETS.forEach(a => {
+        assetSelect.insertAdjacentHTML('beforeend', `<option value="${a.id}">${a.name}</option>`);
+    });
 });
 
-// 엑셀 업로드 처리 (PapaParse)
+// 양식 선택 이벤트
+document.getElementById('upload-format').addEventListener('change', function(e) {
+    const format = e.target.value;
+    const assetContainer = document.getElementById('hyundai-card-select');
+    const hint = document.getElementById('upload-hint');
+    
+    if (format === 'hyundai') {
+        assetContainer.classList.remove('hidden');
+        hint.classList.remove('hidden');
+    } else {
+        assetContainer.classList.add('hidden');
+        hint.classList.add('hidden');
+    }
+});
+
+// 엑셀 업로드 처리 (PapaParse & SheetJS)
 document.getElementById('csv-upload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    Papa.parse(file, {
+    const format = document.getElementById('upload-format').value;
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (format === 'hyundai') {
+        // 현대카드 엑셀 처리 (SheetJS)
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = e.target.result;
+            try {
+                const workbook = XLSX.read(data, {type: 'binary'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                if (jsonData.length === 0) {
+                    alert('파일에 데이터가 없습니다.');
+                    return;
+                }
+
+                // 기존 표 비우기
+                document.getElementById('batch-tbody').innerHTML = '';
+                rowCount = 0;
+                
+                const selectedAssetId = document.getElementById('upload-asset').value;
+
+                jsonData.forEach(row => {
+                    // 현대카드 주요 컬럼 추출 (이용일, 이용금액, 가맹점명)
+                    // 컬럼명이 엑셀마다 다를 수 있으므로 키를 순회하며 찾음
+                    let rawDate = '', rawAmt = '', rawMerchant = '';
+                    for (const key in row) {
+                        const k = key.replace(/\s+/g, '');
+                        if (k.includes('이용일') || k.includes('승인일')) rawDate = String(row[key]);
+                        if (k.includes('이용금액') || k.includes('승인금액')) rawAmt = String(row[key]);
+                        if (k.includes('가맹점') || k.includes('이용처')) rawMerchant = String(row[key]);
+                    }
+
+                    if (!rawDate && !rawAmt && !rawMerchant) return; // 유효하지 않은 행 스킵
+
+                    // 금액 숫자만 추출
+                    let amount = rawAmt.replace(/[^0-9]/g, '');
+                    
+                    // 날짜 포맷 정리 (예: 2026/05/13 -> 2026-05-13)
+                    let formattedDate = rawDate.replace(/\//g, '-').replace(/\./g, '-');
+                    if (formattedDate.length > 10) formattedDate = formattedDate.substring(0, 10);
+
+                    addRow({
+                        date: formattedDate,
+                        type: 'expense',
+                        amount: amount,
+                        merchant: rawMerchant,
+                        description: rawMerchant, // 내용은 가맹점명으로 기본 설정
+                        category_id: '', // 수동 선택
+                        withdraw_asset_id: selectedAssetId,
+                        deposit_asset_id: '',
+                        raw_category: '',
+                        raw_withdraw: '',
+                        raw_deposit: ''
+                    });
+                });
+            } catch (err) {
+                alert('현대카드 엑셀 파싱 중 오류가 발생했습니다: ' + err.message);
+            }
+        };
+        reader.readAsBinaryString(file);
+        
+        // 파일 input 초기화
+        e.target.value = '';
+        
+    } else {
+        // 기본 CSV 처리 (PapaParse)
+        if (ext !== 'csv') {
+            alert('기본 양식은 CSV 파일만 업로드 가능합니다.');
+            e.target.value = '';
+            return;
+        }
+        
+        Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
@@ -309,6 +426,7 @@ document.getElementById('csv-upload').addEventListener('change', function(e) {
             alert('CSV 파싱 중 오류가 발생했습니다: ' + err.message);
         }
     });
+    }
 });
 
 // 제출 함수
