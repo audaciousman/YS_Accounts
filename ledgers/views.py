@@ -86,51 +86,64 @@ def _get_prev_month_day(year, month, day):
     return datetime.date(prev_year, prev_month, min(day, max_day))
 
 
+def get_household_date_range(request_get, household):
+    """GET 파라미터 → 급여일 기준 전체 주기 → 이번달 1일~말일 순으로 날짜 범위 결정."""
+    from django.utils import timezone
+    import datetime, calendar
+    
+    date_from_str = request_get.get('date_from')
+    date_to_str = request_get.get('date_to')
+
+    if date_from_str and date_to_str:
+        try:
+            return (datetime.date.fromisoformat(date_from_str),
+                    datetime.date.fromisoformat(date_to_str))
+        except ValueError:
+            pass
+
+    today = timezone.localdate()
+    salary_day = None
+    if household:
+        salary_cat = Category.objects.filter(
+            household=household, type='income', payment_day__isnull=False
+        ).first()
+        if salary_cat:
+            salary_day = salary_cat.payment_day
+
+    if salary_day:
+        if today.day < salary_day:
+            date_from = _get_prev_month_day(today.year, today.month, salary_day)
+        else:
+            max_day = calendar.monthrange(today.year, today.month)[1]
+            date_from = today.replace(day=min(salary_day, max_day))
+        
+        # 다음 급여일 전날까지 (전체 한 주기)
+        next_year, next_month = date_from.year, date_from.month + 1
+        if next_month > 12:
+            next_month = 1
+            next_year += 1
+        next_max_day = calendar.monthrange(next_year, next_month)[1]
+        next_salary_date = datetime.date(next_year, next_month, min(salary_day, next_max_day))
+        date_to = next_salary_date - datetime.timedelta(days=1)
+    else:
+        date_from = today.replace(day=1)
+        max_day = calendar.monthrange(today.year, today.month)[1]
+        date_to = today.replace(day=max_day)
+
+    return date_from, date_to
+
+
 class LedgerDashboardView(LoginRequiredMixin, ListView):
     model = Transaction
     template_name = 'ledgers/dashboard.html'
     context_object_name = 'transactions'
-
-    def _get_date_range(self, household):
-        """GET 파라미터 → 급여일 기준 → 이번달 1일~오늘 순으로 날짜 범위 결정."""
-        date_from_str = self.request.GET.get('date_from')
-        date_to_str = self.request.GET.get('date_to')
-
-        if date_from_str and date_to_str:
-            try:
-                return (datetime.date.fromisoformat(date_from_str),
-                        datetime.date.fromisoformat(date_to_str))
-            except ValueError:
-                pass
-
-        today = timezone.localdate()
-        salary_day = None
-        if household:
-            salary_cat = Category.objects.filter(
-                household=household, type='income', payment_day__isnull=False
-            ).first()
-            if salary_cat:
-                salary_day = salary_cat.payment_day
-
-        if salary_day:
-            if today.day < salary_day:
-                date_from = _get_prev_month_day(today.year, today.month, salary_day)
-            else:
-                max_day = calendar.monthrange(today.year, today.month)[1]
-                date_from = today.replace(day=min(salary_day, max_day))
-            date_to = today
-        else:
-            date_from = today.replace(day=1)
-            date_to = today
-
-        return date_from, date_to
 
     def get_queryset(self):
         household = get_active_household(self.request)
         if not household:
             return Transaction.objects.none()
 
-        date_from, date_to = self._get_date_range(household)
+        date_from, date_to = get_household_date_range(self.request.GET, household)
         return Transaction.objects.filter(
             household=household,
             date__gte=date_from,
@@ -141,7 +154,7 @@ class LedgerDashboardView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         household = get_active_household(self.request)
-        date_from, date_to = self._get_date_range(household)
+        date_from, date_to = get_household_date_range(self.request.GET, household)
         qs = self.get_queryset()
 
         # ── 기본 집계 ──────────────────────────────────────────────────────────
@@ -179,8 +192,16 @@ class LedgerDashboardView(LoginRequiredMixin, ListView):
                 sal_from = _get_prev_month_day(today.year, today.month, salary_day)
             else:
                 sal_from = today.replace(day=min(salary_day, calendar.monthrange(today.year, today.month)[1]))
+            
+            next_year, next_month = sal_from.year, sal_from.month + 1
+            if next_month > 12:
+                next_month = 1
+                next_year += 1
+            next_max_day = calendar.monthrange(next_year, next_month)[1]
+            next_salary_date = datetime.date(next_year, next_month, min(salary_day, next_max_day))
+            
             context['salary_date_from'] = sal_from
-            context['salary_date_to']   = today
+            context['salary_date_to']   = next_salary_date - datetime.timedelta(days=1)
 
         # ── 고정비 현황 (start_date~end_date 기간 내 활성 고정비) ──────────────
         if household:
@@ -247,21 +268,7 @@ class LedgerStatsView(LoginRequiredMixin, ListView):
         if not household:
             return Transaction.objects.none()
         
-        today = timezone.localdate()
-        date_from_str = self.request.GET.get('date_from')
-        date_to_str = self.request.GET.get('date_to')
-        
-        if date_from_str and date_to_str:
-            try:
-                date_from = datetime.date.fromisoformat(date_from_str)
-                date_to = datetime.date.fromisoformat(date_to_str)
-            except ValueError:
-                date_from = today.replace(day=1)
-                date_to = today
-        else:
-            date_from = today.replace(day=1)
-            date_to = today
-            
+        date_from, date_to = get_household_date_range(self.request.GET, household)
         return Transaction.objects.filter(
             household=household,
             is_deleted=False,
@@ -273,19 +280,8 @@ class LedgerStatsView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         qs = self.get_queryset()
         
-        today = timezone.localdate()
-        date_from_str = self.request.GET.get('date_from')
-        date_to_str = self.request.GET.get('date_to')
-        if date_from_str and date_to_str:
-            try:
-                date_from = datetime.date.fromisoformat(date_from_str)
-                date_to = datetime.date.fromisoformat(date_to_str)
-            except ValueError:
-                date_from = today.replace(day=1)
-                date_to = today
-        else:
-            date_from = today.replace(day=1)
-            date_to = today
+        household = get_active_household(self.request)
+        date_from, date_to = get_household_date_range(self.request.GET, household)
             
         context['date_from'] = date_from
         context['date_to'] = date_to
