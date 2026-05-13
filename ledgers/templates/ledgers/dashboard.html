@@ -10,11 +10,24 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
             <h1 class="text-2xl md:text-4xl font-extrabold text-gray-800 tracking-tight">가계부 내역</h1>
-            <p class="text-gray-500 mt-0.5 text-sm md:text-base font-medium">
-                <span class="text-indigo-600 font-bold">{{ date_from|date:"Y.m.d" }}</span>
-                <span class="mx-1 text-gray-400">~</span>
-                <span class="text-indigo-600 font-bold">{{ date_to|date:"Y.m.d" }}</span>
-            </p>
+            <div class="flex items-center flex-wrap gap-2 mt-0.5">
+                <p class="text-gray-500 text-sm md:text-base font-medium">
+                    <span class="text-indigo-600 font-bold">{{ date_from|date:"Y.m.d" }}</span>
+                    <span class="mx-1 text-gray-400">~</span>
+                    <span class="text-indigo-600 font-bold">{{ date_to|date:"Y.m.d" }}</span>
+                </p>
+                <div class="hidden sm:block w-px h-4 bg-gray-300 mx-1"></div>
+                <!-- 환율 정보 위젯 -->
+                <div id="exchange-rate-widget" class="flex items-center gap-2 text-[11px] md:text-xs font-bold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200 shadow-sm transition-all duration-500 opacity-0" style="display:none;">
+                    <span class="flex items-center gap-1" title="미국 달러">🇺🇸 USD <span id="rate-usd" class="text-gray-800 font-black">--</span></span>
+                    <span class="text-gray-300">|</span>
+                    <span class="flex items-center gap-1" title="일본 엔화 (100엔 기준)">🇯🇵 JPY(100) <span id="rate-jpy" class="text-gray-800 font-black">--</span></span>
+                    <span class="text-[9px] text-gray-400 ml-1 flex items-center gap-0.5" id="rate-time">
+                        <svg class="w-2.5 h-2.5 animate-spin text-indigo-400" id="rate-loading" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        --:--
+                    </span>
+                </div>
+            </div>
         </div>
         <div class="w-full sm:w-auto flex items-center gap-2">
             <a href="{% url 'ledgers:transaction_batch_add' %}"
@@ -522,4 +535,60 @@ function closeFixedQuickAddModal() {
         <img id="modal-image" src="" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain bg-white/5" onclick="event.stopPropagation();">
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function fetchExchangeRates() {
+        const widget = document.getElementById('exchange-rate-widget');
+        const loader = document.getElementById('rate-loading');
+        
+        if(loader) loader.classList.remove('hidden');
+        
+        fetch('https://api.manana.kr/exchange/rate.json')
+            .then(res => res.json())
+            .then(data => {
+                if(loader) loader.classList.add('hidden');
+                
+                // Array 형식으로 응답이 올 수 있음
+                const ratesList = Array.isArray(data) ? data : (data.value || []);
+                
+                if (ratesList && ratesList.length > 0) {
+                    let usdRate = '--';
+                    let jpyRate = '--';
+                    let lastUpdate = '';
+                    
+                    ratesList.forEach(item => {
+                        if (item.name === 'USDKRW=X') {
+                            usdRate = parseFloat(item.rate).toLocaleString('ko-KR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            lastUpdate = item.date.substring(11, 16); // Extract HH:MM
+                        } else if (item.name === 'JPYKRW=X') {
+                            let jpy100 = parseFloat(item.rate) * 100;
+                            jpyRate = jpy100.toLocaleString('ko-KR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        }
+                    });
+                    
+                    if (usdRate !== '--') {
+                        widget.style.display = 'flex';
+                        // 약간의 딜레이 후 투명도 조절로 부드럽게 나타나게
+                        setTimeout(() => widget.classList.remove('opacity-0'), 50);
+                        
+                        document.getElementById('rate-usd').textContent = usdRate;
+                        document.getElementById('rate-jpy').textContent = jpyRate;
+                        document.getElementById('rate-time').innerHTML = lastUpdate + ' 갱신';
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('환율 정보 가져오기 실패:', err);
+                if(loader) loader.classList.add('hidden');
+            });
+    }
+
+    // 초기 실행
+    fetchExchangeRates();
+    
+    // 1분(60초) 간격으로 주기적 갱신
+    setInterval(fetchExchangeRates, 60000);
+});
+</script>
 {% endblock %}
