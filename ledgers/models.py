@@ -137,6 +137,13 @@ class Asset(models.Model):
     def __str__(self):
         return f"[{self.get_asset_type_display()}] {self.name}"
 
+    @property
+    def current_balance(self):
+        from django.db.models import Sum
+        deposits = self.deposits.filter(is_deleted=False).aggregate(total=Sum('amount'))['total'] or 0
+        withdraws = self.withdraws.filter(is_deleted=False).aggregate(total=Sum('amount'))['total'] or 0
+        return self.initial_balance + deposits - withdraws
+
 
 class Transaction(models.Model):
     """

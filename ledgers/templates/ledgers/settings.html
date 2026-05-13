@@ -225,7 +225,10 @@
                                 {% if asset.account_number %}
                                 <span class="text-xs text-gray-400 font-mono">{{ asset.account_number }}</span>
                                 {% endif %}
-                                <span class="text-xs font-black text-indigo-500 block mt-1">{{ asset.initial_balance|intcomma }}원 (초기)</span>
+                                <div class="mt-1 flex items-baseline gap-2">
+                                    <span class="text-sm font-black {% if asset.current_balance < 0 %}text-red-500{% elif asset.current_balance > 0 %}text-blue-600{% else %}text-gray-600{% endif %}">현재 잔액: {{ asset.current_balance|intcomma }}원</span>
+                                    <span class="text-[10px] font-bold text-gray-400">/ 초기: {{ asset.initial_balance|intcomma }}원</span>
+                                </div>
                                 {% if asset.memo %}
                                 <p class="text-[11px] text-gray-500 mt-2 bg-gray-50 p-2 rounded-lg border border-gray-100 leading-relaxed">{{ asset.memo|linebreaksbr }}</p>
                                 {% endif %}
