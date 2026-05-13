@@ -17,8 +17,12 @@ class Household(models.Model):
     admin_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='managed_households')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='households', blank=True)
     
-    default_date_from = models.DateField(null=True, blank=True, verbose_name="기본 조회 시작일")
-    default_date_to = models.DateField(null=True, blank=True, verbose_name="기본 조회 종료일")
+    budget_start_day = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(31)],
+        verbose_name="가계부 주기 시작일",
+        help_text="매월 이 날짜를 가계부 주기의 시작일로 설정합니다. (예: 1이면 1일~말일, 25이면 25일~24일)"
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     

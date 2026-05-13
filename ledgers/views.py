@@ -101,33 +101,33 @@ def get_household_date_range(request_get, household):
         except ValueError:
             pass
 
-    if household and household.default_date_from and household.default_date_to:
-        return household.default_date_from, household.default_date_to
-
     today = timezone.localdate()
-    salary_day = None
-    if household:
+    cycle_start_day = None
+
+    if household and household.budget_start_day:
+        cycle_start_day = household.budget_start_day
+    elif household:
         salary_cat = Category.objects.filter(
             household=household, type='income', payment_day__isnull=False
         ).first()
         if salary_cat:
-            salary_day = salary_cat.payment_day
+            cycle_start_day = salary_cat.payment_day
 
-    if salary_day:
-        if today.day < salary_day:
-            date_from = _get_prev_month_day(today.year, today.month, salary_day)
+    if cycle_start_day:
+        if today.day < cycle_start_day:
+            date_from = _get_prev_month_day(today.year, today.month, cycle_start_day)
         else:
             max_day = calendar.monthrange(today.year, today.month)[1]
-            date_from = today.replace(day=min(salary_day, max_day))
+            date_from = today.replace(day=min(cycle_start_day, max_day))
         
-        # 다음 급여일 전날까지 (전체 한 주기)
+        # 다음 주기 시작일 전날까지 (전체 한 주기)
         next_year, next_month = date_from.year, date_from.month + 1
         if next_month > 12:
             next_month = 1
             next_year += 1
         next_max_day = calendar.monthrange(next_year, next_month)[1]
-        next_salary_date = datetime.date(next_year, next_month, min(salary_day, next_max_day))
-        date_to = next_salary_date - datetime.timedelta(days=1)
+        next_cycle_start_date = datetime.date(next_year, next_month, min(cycle_start_day, next_max_day))
+        date_to = next_cycle_start_date - datetime.timedelta(days=1)
     else:
         date_from = today.replace(day=1)
         max_day = calendar.monthrange(today.year, today.month)[1]
@@ -492,7 +492,7 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
 
 class HouseholdSettingsUpdateView(LoginRequiredMixin, UpdateView):
     model = Household
-    fields = ['default_date_from', 'default_date_to']
+    fields = ['budget_start_day']
     
     def get_success_url(self):
         return reverse_lazy('ledgers:settings')
@@ -501,12 +501,7 @@ class HouseholdSettingsUpdateView(LoginRequiredMixin, UpdateView):
         return get_active_household(self.request)
 
     def form_valid(self, form):
-        # 시작일이나 종료일 중 하나만 입력된 경우 처리 (둘 다 입력되거나 둘 다 비워져야 함)
-        if bool(form.cleaned_data['default_date_from']) != bool(form.cleaned_data['default_date_to']):
-            messages.error(self.request, "기본 조회 시작일과 종료일은 둘 다 지정하거나 둘 다 비워두어야 합니다.")
-            return self.form_invalid(form)
-            
-        messages.success(self.request, "가계부 기본 조회 기간이 저장되었습니다.")
+        messages.success(self.request, "가계부 주기 시작일 설정이 저장되었습니다.")
         return super().form_valid(form)
 
 class LedgerSettingsView(LoginRequiredMixin, ListView):
