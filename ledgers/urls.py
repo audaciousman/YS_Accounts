@@ -6,7 +6,8 @@ from .views import (
     AssetCreateView, AssetUpdateView, AssetDeleteView, LedgerStatsView, GroupRequestCreateView, FixedTransactionQuickAddView,
     TransactionBatchCreateView, download_batch_template,
     AssetBatchCreateView, download_asset_batch_template,
-    CategoryBatchCreateView, download_category_batch_template
+    CategoryBatchCreateView, download_category_batch_template,
+    HouseholdSettingsUpdateView
 )
 
 app_name = 'ledgers'
@@ -26,6 +27,7 @@ urlpatterns = [
 
     # 가계부 환경설정
     path('settings/', LedgerSettingsView.as_view(), name='settings'),
+    path('settings/household/update/', HouseholdSettingsUpdateView.as_view(), name='household_settings_update'),
     path('settings/category/add/', CategoryCreateView.as_view(), name='category_create'),
     path('settings/category/<int:pk>/edit/', CategoryUpdateView.as_view(), name='category_update'),
     path('settings/category/<int:pk>/delete/', CategoryDeleteView.as_view(), name='category_delete'),

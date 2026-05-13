@@ -16,6 +16,10 @@ class Household(models.Model):
     household_type = models.CharField(max_length=20, choices=HOUSEHOLD_TYPE_CHOICES, default='personal')
     admin_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='managed_households')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='households', blank=True)
+    
+    default_date_from = models.DateField(null=True, blank=True, verbose_name="기본 조회 시작일")
+    default_date_to = models.DateField(null=True, blank=True, verbose_name="기본 조회 종료일")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     
     history = HistoricalRecords()

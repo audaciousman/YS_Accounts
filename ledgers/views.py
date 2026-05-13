@@ -101,6 +101,9 @@ def get_household_date_range(request_get, household):
         except ValueError:
             pass
 
+    if household and household.default_date_from and household.default_date_to:
+        return household.default_date_from, household.default_date_to
+
     today = timezone.localdate()
     salary_day = None
     if household:
@@ -487,6 +490,25 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
 
 # ── 가계부 설정 관리 ────────────────────────────────────────────────────────────
 
+class HouseholdSettingsUpdateView(LoginRequiredMixin, UpdateView):
+    model = Household
+    fields = ['default_date_from', 'default_date_to']
+    
+    def get_success_url(self):
+        return reverse_lazy('ledgers:settings')
+        
+    def get_object(self, queryset=None):
+        return get_active_household(self.request)
+
+    def form_valid(self, form):
+        # 시작일이나 종료일 중 하나만 입력된 경우 처리 (둘 다 입력되거나 둘 다 비워져야 함)
+        if bool(form.cleaned_data['default_date_from']) != bool(form.cleaned_data['default_date_to']):
+            messages.error(self.request, "기본 조회 시작일과 종료일은 둘 다 지정하거나 둘 다 비워두어야 합니다.")
+            return self.form_invalid(form)
+            
+        messages.success(self.request, "가계부 기본 조회 기간이 저장되었습니다.")
+        return super().form_valid(form)
+
 class LedgerSettingsView(LoginRequiredMixin, ListView):
     template_name = 'ledgers/settings.html'
     context_object_name = 'categories'
@@ -512,6 +534,7 @@ class LedgerSettingsView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         household = get_active_household(self.request)
+        context['active_household'] = household
         context['assets'] = Asset.objects.filter(household=household, is_active=True).order_by('asset_type', 'name')
         context['active_tab']       = self.request.GET.get('tab', 'all')
         context['search_query']     = self.request.GET.get('search', '')
