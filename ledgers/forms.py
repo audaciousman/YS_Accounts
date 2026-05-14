@@ -66,6 +66,33 @@ class GroupRequestForm(forms.ModelForm):
                 instance.requested_members.set(valid_users)
         return instance
 
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['parent', 'name', 'type', 'is_fixed', 'payment_day', 'fixed_amount', 'start_date', 'end_date']
+        widgets = {
+            'parent': forms.Select(attrs={'class': 'w-full px-4 py-2 border rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500'}),
+            'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500'}),
+            'type': forms.Select(attrs={'class': 'w-full px-4 py-2 border rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500'}),
+            'is_fixed': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500'}),
+            'payment_day': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 border rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500', 'min': 1, 'max': 31}),
+            'fixed_amount': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 border rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500'}),
+            'start_date': forms.DateInput(attrs={'class': 'w-full px-4 py-2 border rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'w-full px-4 py-2 border rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500', 'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        household = kwargs.pop('household', None)
+        super().__init__(*args, **kwargs)
+        
+        if household:
+            # 대분류만 부모로 선택 가능 (자신이 대분류인 것)
+            qs = Category.objects.filter(household=household, parent__isnull=True)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk) # 자기 자신을 부모로 선택 방지
+            self.fields['parent'].queryset = qs.order_by('type', 'name')
+            self.fields['parent'].empty_label = "--- 대분류로 설정 (선택 안함) ---"
+
 class TransactionForm(forms.ModelForm):
     """
     가계부 내역(수입/지출/이체)을 작성할 때 사용하는 입력 폼
@@ -94,11 +121,40 @@ class TransactionForm(forms.ModelForm):
             
         # 뷰에서 전달받은 household(가계부) 객체를 사용하여, 해당 가계부 전용 설정만 필터링합니다.
         if household:
-            self.fields['category'].queryset = Category.objects.filter(household=household).order_by('type', '-is_fixed', 'name')
+            all_cats = Category.objects.filter(household=household).order_by('type', '-is_fixed', 'name')
+            
+            # 카테고리 계층구조(대분류-소분류)를 optgroup으로 묶기 위한 로직
+            grouped_choices = [("", "분류(카테고리) 선택")]
+            
+            # 1. 대분류별로 소분류들을 매핑
+            parent_dict = {}
+            for c in all_cats:
+                if c.parent_id:
+                    if c.parent not in parent_dict:
+                        parent_dict[c.parent] = []
+                    parent_dict[c.parent].append(c)
+                else:
+                    if c not in parent_dict:
+                        parent_dict[c] = []
+            
+            # 2. choices 리스트 생성 (Django의 optgroup 형식: ('Group Name', [(value, label), ...]))
+            # 정렬: 수입/지출, 그리고 이름순
+            for p_cat, children in sorted(parent_dict.items(), key=lambda x: (x[0].type, not x[0].is_fixed, x[0].name)):
+                if children:
+                    # 소분류가 있는 경우, 대분류 자체를 선택할 수도 있게 포함
+                    group_opts = [(p_cat.id, f"[대분류] {p_cat.name}")]
+                    for child in children:
+                        group_opts.append((child.id, f" ↳ {child.name}"))
+                    grouped_choices.append((p_cat.get_type_display() + " - " + p_cat.name, group_opts))
+                else:
+                    # 소분류가 없는 단일 카테고리는 그룹 없이 표시
+                    grouped_choices.append((p_cat.id, p_cat.name))
+
+            self.fields['category'].choices = grouped_choices
+            
             self.fields['withdraw_asset'].queryset = Asset.objects.filter(household=household, is_active=True).order_by('name')
             self.fields['deposit_asset'].queryset  = Asset.objects.filter(household=household, is_active=True).order_by('name')
             
             # 빈 값일 때의 플레이스홀더 텍스트 변경
-            self.fields['category'].empty_label       = "분류(카테고리) 선택"
             self.fields['withdraw_asset'].empty_label = "어디서 돈이 빠져나갔나요? (선택)"
             self.fields['deposit_asset'].empty_label  = "어디로 돈이 들어왔나요? (선택)"

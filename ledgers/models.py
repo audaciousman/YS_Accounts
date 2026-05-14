@@ -71,6 +71,15 @@ class Category(models.Model):
         ('savings', '저금'),
     )
     household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name='categories')
+    parent = models.ForeignKey(
+        'self', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True, 
+        related_name='subcategories',
+        verbose_name="상위 카테고리(대분류)",
+        help_text="선택 시 소분류가 되며, 비워두면 대분류가 됩니다."
+    )
     name = models.CharField(max_length=50, help_text="예: 식비, 월급, 보험료")
     type = models.CharField(max_length=10, choices=CATEGORY_TYPE_CHOICES)
     is_fixed = models.BooleanField(default=False, help_text="지출일 경우 고정비(True)인지 변동비(False)인지 구분합니다.", verbose_name="고정비 여부")

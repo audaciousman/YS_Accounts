@@ -221,17 +221,17 @@
             <div class="flex items-center gap-2 md:gap-3">
                 <div class="w-24 md:w-32 flex-shrink-0">
                     <p class="text-xs md:text-sm font-bold text-gray-700 truncate">
-                        {% if item.category__name %}{{ item.category__name }}{% else %}<span class="text-gray-400 italic">미지정</span>{% endif %}
+                        {% if item.main_cat_name %}{{ item.main_cat_name }}{% else %}<span class="text-gray-400 italic">미지정</span>{% endif %}
                     </p>
                     <p class="text-[10px] md:text-[11px] text-gray-400">{{ item.cnt }}건</p>
                 </div>
                 <div class="flex-1 bg-gray-100 rounded-full h-2 md:h-2.5 min-w-0">
-                    <div class="h-full rounded-full {% if item.category__is_fixed %}bg-purple-400{% else %}bg-red-400{% endif %}"
+                    <div class="h-full rounded-full {% if item.main_cat_is_fixed %}bg-purple-400{% else %}bg-red-400{% endif %}"
                         style="width: {% widthratio item.total total_expense 100 %}%"></div>
                 </div>
                 <div class="text-right flex-shrink-0">
                     <p class="text-xs md:text-sm font-black text-gray-800">{{ item.total|intcomma }}원</p>
-                    {% if item.category__is_fixed %}<span class="text-[9px] md:text-[10px] text-purple-500 font-bold">고정</span>{% else %}<span class="text-[9px] md:text-[10px] text-yellow-600 font-bold">변동</span>{% endif %}
+                    {% if item.main_cat_is_fixed %}<span class="text-[9px] md:text-[10px] text-purple-500 font-bold">고정</span>{% else %}<span class="text-[9px] md:text-[10px] text-yellow-600 font-bold">변동</span>{% endif %}
                 </div>
             </div>
             {% endif %}

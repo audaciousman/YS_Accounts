@@ -11,8 +11,8 @@ import csv
 from django.shortcuts import redirect, get_object_or_404, reverse, render
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.contrib import messages
-from .models import Transaction, Household, Category, Asset
-from .forms import TransactionForm
+from .models import Transaction, Household, Category, Asset, GroupRequest
+from .forms import TransactionForm, CategoryForm, GroupRequestForm
 
 
 def get_active_household(request):
@@ -237,9 +237,14 @@ class LedgerDashboardView(LoginRequiredMixin, ListView):
             context['fixed_pending_count']  = sum(1 for c in fixed_status if not c.is_entered)
 
         # ── 카테고리별 지출 요약 ───────────────────────────────────────────────
+        from django.db.models.functions import Coalesce
         cat_summary = (
             qs.filter(transaction_type='expense')
-            .values('category__id', 'category__name', 'category__is_fixed')
+            .annotate(
+                main_cat_name=Coalesce('category__parent__name', 'category__name'),
+                main_cat_is_fixed=Coalesce('category__parent__is_fixed', 'category__is_fixed')
+            )
+            .values('main_cat_name', 'main_cat_is_fixed')
             .annotate(total=Sum('amount'), cnt=Count('id'))
             .order_by('-total')
         )
@@ -524,7 +529,18 @@ class LedgerSettingsView(LoginRequiredMixin, ListView):
         if search:
             qs = qs.filter(name__icontains=search)
 
-        return qs.order_by('type', '-is_fixed', 'name')
+        from django.db.models import F, Case, When, IntegerField
+        from django.db.models.functions import Coalesce
+        
+        qs = qs.annotate(
+            sort_group=Coalesce('parent__name', 'name'),
+            is_child=Case(
+                When(parent__isnull=False, then=1),
+                default=0,
+                output_field=IntegerField(),
+            )
+        )
+        return qs.order_by('type', '-is_fixed', 'sort_group', 'is_child', 'name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -545,8 +561,13 @@ class LedgerSettingsView(LoginRequiredMixin, ListView):
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     model    = Category
-    fields   = ['name', 'type', 'is_fixed', 'payment_day', 'fixed_amount', 'start_date', 'end_date']
+    form_class = CategoryForm
     template_name = 'ledgers/category_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['household'] = get_active_household(self.request)
+        return kwargs
 
     def get_success_url(self):
         next_url = self.request.POST.get('next') or self.request.GET.get('next')
@@ -561,8 +582,13 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
 
 class CategoryUpdateView(LoginRequiredMixin, UpdateView):
     model    = Category
-    fields   = ['name', 'type', 'is_fixed', 'payment_day', 'fixed_amount', 'start_date', 'end_date']
+    form_class = CategoryForm
     template_name = 'ledgers/category_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['household'] = get_active_household(self.request)
+        return kwargs
 
     def get_success_url(self):
         next_url = self.request.POST.get('next') or self.request.GET.get('next')
