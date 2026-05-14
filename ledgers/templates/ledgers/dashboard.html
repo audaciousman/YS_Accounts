@@ -263,7 +263,7 @@
                     <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap hidden md:table-cell">작성자</th>
                     <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider">내역</th>
                     <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider text-right whitespace-nowrap">금액</th>
-                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider text-center w-10"></th>
+                    <th class="p-3 md:p-4 font-bold text-gray-400 text-xs uppercase tracking-wider text-center w-24 min-w-[5rem]"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -356,7 +356,7 @@
                         {{ tx.amount|intcomma }}원
                     </td>
                     <!-- 수정 및 소프트 삭제 -->
-                    <td class="p-3 md:p-4 text-center">
+                    <td class="p-3 md:p-4 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                             <!-- 수정 버튼 -->
                             <a href="{% url 'ledgers:transaction_update' tx.pk %}"
